@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 import { initializeDatabase, pool } from "./config/database";
 import { emergenciasRouter } from "./routes/emergencias";
@@ -12,6 +13,13 @@ import { ConafService } from "./services/conaf";
 import { serve } from "bun";
 
 const app = new Hono();
+
+// CORS - permitir requests desde cualquier origen en producción
+app.use("/*", cors({
+  origin: "*",
+  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowHeaders: ["Content-Type", "Authorization"],
+}));
 
 // Middleware para pasar pool a contexto
 app.use(async (c, next) => {
