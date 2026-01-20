@@ -1,0 +1,10 @@
+[build]
+builder = "NIXPACKS"
+
+[build.nixpacks]
+providers = ["node"]
+
+[deploy]
+startCommand = "cd packages/backend && bun run start"
+healthcheckPath = "/api/health"
+restartPolicyType = "ON_FAILURE"
