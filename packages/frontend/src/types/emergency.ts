@@ -7,10 +7,17 @@ export interface Emergency {
     lng: number;
     severidad: "baja" | "media" | "alta" | "critica";
     fuente: string;
-    fecha_inicio?: string;
+    fecha_inicio: string;
     fecha_actualizacion: string;
     url_fuente?: string;
+    url?: string;
+    region?: string;
     metadata?: Record<string, any>;
+    // Campos específicos para sismos
+    magnitud?: number;
+    profundidad?: number;
+    // Campos específicos para incendios
+    superficie_afectada?: number;
 }
 
 export const EMERGENCY_ICONS = {

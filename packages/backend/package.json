@@ -8,13 +8,16 @@
     "@types/pg": "^8.16.0",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
     "hono": "^4.11.4",
-    "pg": "^8.17.1",
+    "pg": "^8.17.2",
     "postgis": "^1.0.6",
     "postgres": "^3.4.8",
     "puppeteer": "^24.35.0"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "drizzle-kit": "^0.31.8",
+    "tsx": "^4.21.0"
   }
 }

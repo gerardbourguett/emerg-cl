@@ -6,49 +6,72 @@ export function EmergencyNumbers() {
 
     return (
         <>
-            {/* Floating Button */}
+            {/* Minimalist Floating Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="absolute bottom-32 right-4 md:bottom-10 md:right-24 z-[999] w-14 h-14 rounded-full bg-red-500 text-white text-2xl font-bold shadow-lg hover:bg-red-600 transition-all hover:scale-110 flex items-center justify-center animate-pulse"
+                className="fixed bottom-6 right-6 z-[999] group flex items-center gap-2 pr-4 pl-3 py-3 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-900/20 rounded-full transition-all hover:scale-105 active:scale-95"
                 title="Números de Emergencia"
             >
-                📞
+                <div className="bg-white/20 p-1.5 rounded-full">
+                    <span className="text-xl">📞</span>
+                </div>
+                <span className="font-semibold text-sm tracking-wide hidden md:block">SOS</span>
             </button>
 
-            {/* Modal */}
+            {/* Modal Overlay */}
             {isOpen && (
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-slate-900 border border-white/10 rounded-3xl shadow-2xl max-w-sm w-full p-6 font-sans">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                📞 Emergencias
+                <div className="fixed inset-0 z-[1002] flex items-end md:items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() => setIsOpen(false)}
+                    />
+
+                    {/* Modal Content */}
+                    <div className="relative bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 duration-300">
+
+                        {/* Header */}
+                        <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-3">
+                                <span className="text-red-500">📞</span>
+                                Números de Emergencia
                             </h2>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="text-white/50 hover:text-white text-2xl"
+                                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
                             >
                                 ✕
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        {/* Grid */}
+                        <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
                             {EMERGENCY_NUMBERS.map((item) => (
                                 <a
                                     key={item.number}
                                     href={`tel:${item.number}`}
-                                    className="flex flex-col items-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition group"
+                                    className="group flex flex-col items-center justify-center p-4 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all active:scale-95"
                                 >
-                                    <span className="text-lg font-bold text-red-400 group-hover:text-red-300">
+                                    <span
+                                        className={`font-bold text-slate-200 group-hover:text-red-400 transition-colors mb-1 ${item.number.length > 12 ? "text-sm md:text-base leading-tight" :
+                                                item.number.length > 8 ? "text-lg md:text-xl" : "text-2xl"
+                                            }`}
+                                    >
                                         {item.number}
                                     </span>
-                                    <span className="text-xs text-slate-400">{item.label}</span>
+                                    <span className="text-xs text-slate-500 group-hover:text-slate-400 font-medium text-center leading-tight">
+                                        {item.label}
+                                    </span>
                                 </a>
                             ))}
                         </div>
 
-                        <p className="text-center text-xs text-slate-500 mt-4">
-                            Mantente informado por los canales oficiales.
-                        </p>
+                        {/* Disclaimer */}
+                        <div className="px-6 py-4 bg-slate-950/30 border-t border-slate-800">
+                            <p className="text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                                <span className="text-yellow-500/80">⚠️</span>
+                                Mantén la calma y sigue instrucciones oficiales.
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import {
   getEmergenciesByRadius,
   getEmergenciesByType,
+  getAllEmergencies,
 } from "../services/database";
 
 export const emergenciasRouter = new Hono();
@@ -30,14 +31,6 @@ emergenciasRouter.get("/tipo/:tipo", async (c) => {
 
 // GET todas activas
 emergenciasRouter.get("/", async (c) => {
-  const result = await (c as any).env.pool.query(`
-    SELECT id, tipo, titulo, descripcion,
-           ST_Y(ubicacion::geometry) as lat, ST_X(ubicacion::geometry) as lng,
-           severidad, estado, fecha_actualizacion, fuente
-    FROM emergencies
-    WHERE estado IN ('activo', 'monitoreo')
-    ORDER BY severidad DESC, fecha_actualizacion DESC;
-  `);
-
-  return c.json({ emergencies: result.rows });
+  const emergencies = await getAllEmergencies();
+  return c.json({ emergencies, count: emergencies.length });
 });

@@ -1,6 +1,5 @@
 import { Pool } from "pg";
 import * as dotenv from "dotenv";
-import { connect } from "bun";
 
 dotenv.config();
 
@@ -16,9 +15,9 @@ pool.on("error", (err: Error) => {
 export async function initializeDatabase() {
   try {
     await pool.query("SELECT NOW()");
-    console.log("Database connected successfully");
+    console.log("✅ Database connected successfully");
   } catch (error) {
-    console.error("Error connecting to the database:", error);
+    console.error("❌ Error connecting to the database:", error);
     process.exit(1);
   }
 }

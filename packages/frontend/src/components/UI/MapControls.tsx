@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Emergency } from "../../types/emergency";
 
 interface MapControlsProps {
@@ -13,6 +14,8 @@ export function MapControls({
     onFilterChange,
     onFlyTo,
 }: MapControlsProps) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     const counts = {
         sismos: emergencies.filter((e) => e.tipo === "seismo").length,
         incendios: emergencies.filter((e) => e.tipo === "incendio_forestal").length,
@@ -21,29 +24,102 @@ export function MapControls({
 
     return (
         <>
-            {/* Header & Stats - Top Left */}
-            <div className="absolute top-4 left-4 md:top-6 md:left-6 z-[999] p-3 md:p-5 rounded-2xl md:rounded-3xl bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-2xl skew-y-0 transition-all hover:bg-slate-900/70 font-sans group">
-                <h1 className="text-lg md:text-2xl font-bold flex items-center gap-2 md:gap-3 mb-2 md:mb-4 text-white tracking-tight">
-                    <span className="text-2xl md:text-3xl filter drop-shadow-lg group-hover:scale-110 transition-transform duration-300">🚨</span>
-                    <span className="hidden md:inline">Emergencias Chile</span>
-                    <span className="md:hidden">EmergenciasCL</span>
-                </h1>
-                <div className="flex gap-2 md:gap-3 text-xs md:text-sm font-medium">
-                    <StatBadge label="Sismos" count={counts.sismos} color="yellow" />
-                    <StatBadge label="Incendios" count={counts.incendios} color="red" />
-                    <StatBadge label="Alertas" count={counts.alertas} color="green" />
-                </div>
-            </div>
+            {/* Header Removed as per user request */}
 
-            {/* Bottom Dock - Navigation & Filters */}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[999] flex flex-col gap-4 items-center">
+            {/* Bottom Panel Mobile (Drawer) */}
+            {isExpanded && (
+                <>
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[998] md:hidden"
+                        onClick={() => setIsExpanded(false)}
+                    />
 
+                    {/* Panel */}
+                    <div className="fixed bottom-0 left-0 right-0 z-[999] md:hidden bg-slate-900 rounded-t-3xl shadow-2xl border-t border-white/10 animate-slide-up">
+                        {/* Handle */}
+                        <div className="flex justify-center py-3">
+                            <div className="w-12 h-1.5 bg-slate-600 rounded-full" />
+                        </div>
+
+                        <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+                            {/* Dashboard Link Mobile */}
+                            <a
+                                href="/dashboard"
+                                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold transition-all"
+                            >
+                                📊 Ver Dashboard Histórico
+                            </a>
+
+                            {/* Navegación territorial */}
+                            <div>
+                                <h3 className="text-xs text-slate-400 uppercase tracking-wide mb-2 font-semibold">
+                                    Ir a Territorio
+                                </h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <NavButton onClick={() => { onFlyTo("continental"); setIsExpanded(false); }} label="Continental" />
+                                    <NavButton onClick={() => { onFlyTo("juanfernandez"); setIsExpanded(false); }} label="Juan Fernández" />
+                                    <NavButton onClick={() => { onFlyTo("pascua"); setIsExpanded(false); }} label="Rapa Nui" />
+                                    <NavButton onClick={() => { onFlyTo("antartica"); setIsExpanded(false); }} label="Antártica" />
+                                </div>
+                            </div>
+
+                            {/* Filtros */}
+                            <div>
+                                <h3 className="text-xs text-slate-400 uppercase tracking-wide mb-2 font-semibold">
+                                    Filtrar Emergencias
+                                </h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <FilterButton
+                                        active={filter === "all"}
+                                        onClick={() => { onFilterChange("all"); setIsExpanded(false); }}
+                                        label="Todos"
+                                    />
+                                    <FilterButton
+                                        active={filter === "seismo"}
+                                        onClick={() => { onFilterChange("seismo"); setIsExpanded(false); }}
+                                        label="Sismos"
+                                        color="yellow"
+                                    />
+                                    <FilterButton
+                                        active={filter === "incendio_forestal"}
+                                        onClick={() => { onFilterChange("incendio_forestal"); setIsExpanded(false); }}
+                                        label="Incendios"
+                                        color="red"
+                                    />
+                                    <FilterButton
+                                        active={filter === "alerta"}
+                                        onClick={() => { onFilterChange("alerta"); setIsExpanded(false); }}
+                                        label="Alertas"
+                                        color="green"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Stats detalladas */}
+                            <div className="bg-slate-800/50 rounded-xl p-4 border border-white/10">
+                                <h3 className="text-xs text-slate-400 uppercase tracking-wide mb-3 font-semibold">
+                                    Resumen de Emergencias
+                                </h3>
+                                <div className="space-y-2">
+                                    <StatRow label="Sismos" count={counts.sismos} color="yellow" />
+                                    <StatRow label="Incendios Forestales" count={counts.incendios} color="red" />
+                                    <StatRow label="Alertas SENAPRED" count={counts.alertas} color="green" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Desktop Bottom Dock (mantener original) */}
+            <div className="hidden md:flex absolute bottom-10 left-1/2 -translate-x-1/2 z-[999] flex-col gap-4 items-center">
                 {/* Navigation Pills */}
                 <div className="flex gap-2 p-1.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-xl">
-                    <NavButton onClick={() => onFlyTo("continental")} label="Cont." fullLabel="Continental" />
-                    <NavButton onClick={() => onFlyTo("juanfernandez")} label="J.F." fullLabel="Juan Fernández" />
-                    <NavButton onClick={() => onFlyTo("pascua")} label="Rapa" fullLabel="Rapa Nui" />
-                    <NavButton onClick={() => onFlyTo("antartica")} label="Ant." fullLabel="Antártica" />
+                    <NavButton onClick={() => onFlyTo("continental")} label="Continental" />
+                    <NavButton onClick={() => onFlyTo("juanfernandez")} label="Juan Fernández" />
+                    <NavButton onClick={() => onFlyTo("pascua")} label="Rapa Nui" />
+                    <NavButton onClick={() => onFlyTo("antartica")} label="Antártica" />
                 </div>
 
                 {/* Filter Dock */}
@@ -77,7 +153,7 @@ export function MapControls({
     );
 }
 
-function StatBadge({ label, count, color }: { label: string; count: number; color: string }) {
+function StatBadge({ label, count, color, compact = false }: { label: string; count: number; color: string; compact?: boolean }) {
     const colors = {
         yellow: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
         red: "bg-red-500/10 text-red-400 border-red-500/20",
@@ -87,21 +163,37 @@ function StatBadge({ label, count, color }: { label: string; count: number; colo
     const classes = colors[color];
 
     return (
-        <div className={`px-3 py-1.5 rounded-xl border ${classes} flex items-center gap-2 transition-all hover:scale-105 cursor-default`}>
-            <span className="opacity-80">{label}</span>
-            <b className="text-lg">{count}</b>
+        <div className={`px-2 py-1 rounded-lg border ${classes} flex items-center gap-1 transition-all`}>
+            <span className="text-[10px] md:text-xs opacity-80 font-medium">{label}</span>
+            <b className="text-sm md:text-base">{count}</b>
         </div>
     );
 }
 
-function NavButton({ onClick, label, fullLabel }: { onClick: () => void; label: string, fullLabel?: string }) {
+function StatRow({ label, count, color }: { label: string; count: number; color: string }) {
+    const colors = {
+        yellow: "text-yellow-400",
+        red: "text-red-400",
+        green: "text-green-400",
+    };
+    // @ts-ignore
+    const textColor = colors[color];
+
+    return (
+        <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-300">{label}</span>
+            <span className={`text-lg font-bold ${textColor}`}>{count}</span>
+        </div>
+    );
+}
+
+function NavButton({ onClick, label }: { onClick: () => void; label: string }) {
     return (
         <button
             onClick={onClick}
-            className="px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all active:scale-95 font-sans"
+            className="px-4 py-2 rounded-full md:rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all active:scale-95 w-full md:w-auto"
         >
-            <span className="md:hidden">{label}</span>
-            <span className="hidden md:inline">{fullLabel || label}</span>
+            {label}
         </button>
     );
 }
@@ -129,7 +221,7 @@ function FilterButton({
     return (
         <button
             onClick={onClick}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 font-sans ${active
+            className={`px-4 py-2.5 md:px-5 rounded-xl text-sm font-bold transition-all duration-300 w-full md:w-auto ${active
                 ? `${activeClass} scale-105`
                 : "bg-transparent text-slate-400 hover:text-white hover:bg-white/5"
                 }`}

@@ -10,6 +10,7 @@ import { AlertsTicker } from "../UI/AlertsTicker";
 import { WeatherWidget } from "../UI/WeatherWidget";
 import { StatsWidget } from "../UI/StatsWidget";
 import { EmergencyNumbers } from "../UI/EmergencyNumbers";
+import { EmergencyDetailPanel } from "../UI/EmergencyDetailPanel";
 import { AlberguesLayer } from "./AlberguesLayer";
 import type { Emergency } from "../../types/emergency";
 
@@ -37,6 +38,7 @@ function FlyToController({
 export default function Map() {
     const [emergencies, setEmergencies] = useState<Emergency[]>([]);
     const [filter, setFilter] = useState("all");
+    const [selectedEmergency, setSelectedEmergency] = useState<Emergency | null>(null);
     const [flyTarget, setFlyTarget] = useState<{
         center: [number, number];
         zoom: number;
@@ -70,7 +72,7 @@ export default function Map() {
     });
 
     return (
-        <div className="relative w-full h-screen bg-slate-900 border-t border-slate-700">
+        <div className="relative w-full h-screen bg-slate-900 border-t border-slate-700 overflow-hidden">
             <MapControls
                 emergencies={emergencies}
                 filter={filter}
@@ -91,6 +93,8 @@ export default function Map() {
                     [-90, -120],
                     [-15, -50],
                 ]}
+                minZoom={4}
+                maxZoom={18}
             >
                 <ZoomControl position="bottomright" />
 
@@ -148,11 +152,22 @@ export default function Map() {
                     }}
                 >
                     {filteredEmergencies.map((e) => (
-                        <EmergencyMarker key={e.id} emergency={e} />
+                        <EmergencyMarker 
+                            key={e.id} 
+                            emergency={e}
+                            onClick={() => setSelectedEmergency(e)}
+                        />
                     ))}
                 </MarkerClusterGroup>
             </MapContainer>
+
             <EmergencyNumbers />
+            
+            {/* Panel de detalles para móviles */}
+            <EmergencyDetailPanel
+                emergency={selectedEmergency}
+                onClose={() => setSelectedEmergency(null)}
+            />
         </div>
     );
 }

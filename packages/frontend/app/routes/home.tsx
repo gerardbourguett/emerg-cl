@@ -1,7 +1,8 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import type { Route } from "./+types/home";
+import { useTheme } from "../../src/hooks/useTheme";
 
-const Map = lazy(() => import("../../src/components/Map/Map.client"));
+const MapboxMap = lazy(() => import("../../src/components/Map/MapboxMap.client"));
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -11,9 +12,11 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const { theme } = useTheme();
+
   return (
-    <Suspense fallback={<div className="h-screen w-full bg-slate-900 text-white flex items-center justify-center">Cargando mapa...</div>}>
-      <Map />
+    <Suspense fallback={<div className="h-screen w-full theme-bg-primary theme-text-primary flex items-center justify-center">Cargando mapa...</div>}>
+      <MapboxMap />
     </Suspense>
   );
 }

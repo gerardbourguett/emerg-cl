@@ -3,13 +3,20 @@ import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 import { initializeDatabase, pool } from "./config/database";
 import { emergenciasRouter } from "./routes/emergencias";
+import { weatherRouter } from "./routes/weather";
+import { hospitalsRouter } from "./routes/hospitals";
+import { refugiosRouter } from "./routes/refugios";
+import { statsRouter } from "./routes/stats";
 import { scrapeSismosChile } from "./services/scrapers/sismos";
 import { scrapeNASAFIRMS } from "./services/scrapers/firms";
 import { scrapeSenapredTelegram } from "./services/scrapers/senapred-telegram";
-import { saveEmergency } from "./services/database";
+import { saveEmergency, cleanupOldEmergencies } from "./services/database";
+import { aggregateDailyStats } from "./services/stats";
 import { SenapredService } from "./services/senapred";
 import { MeteoService } from "./services/meteo";
 import { ConafService } from "./services/conaf";
+import { OpenWeatherService } from "./services/openweather";
+import { RefugiosService } from "./services/refugios";
 import { serve } from "bun";
 
 const app = new Hono();
@@ -35,6 +42,10 @@ app.get("/api/health", (c) => c.json({ status: "ok", timestamp: new Date().toISO
 
 // Rutas
 app.route("/api/emergencias", emergenciasRouter);
+app.route("/api/weather", weatherRouter);
+app.route("/api/hospitals", hospitalsRouter);
+app.route("/api/refugios", refugiosRouter);
+app.route("/api/stats", statsRouter);
 
 // Backend Scraper Routes
 app.get("/api/senapred/albergues", async (c) => {
@@ -71,6 +82,66 @@ async function startScrapers() {
 
   // Luego cada 5 minutos
   setInterval(runScrapers, 5 * 60 * 1000);
+}
+
+// Cleanup job: runs every hour to delete data older than 24h
+async function startCleanupJob() {
+  console.log("🗑️  Iniciando cleanup job...");
+  
+  // Run immediately
+  await cleanupOldEmergencies();
+  
+  // Then every hour
+  setInterval(async () => {
+    await cleanupOldEmergencies();
+  }, 60 * 60 * 1000); // 1 hour
+}
+
+// Stats aggregation job: runs once per day at midnight
+async function startStatsAggregationJob() {
+  console.log("📊 Iniciando stats aggregation job...");
+  
+  // Calculate time until next midnight
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  const msUntilMidnight = tomorrow.getTime() - now.getTime();
+  
+  // Run at midnight
+  setTimeout(async () => {
+    await aggregateDailyStats();
+    
+    // Then every 24 hours
+    setInterval(async () => {
+      await aggregateDailyStats();
+    }, 24 * 60 * 60 * 1000);
+  }, msUntilMidnight);
+  
+  console.log(`   Next run at: ${tomorrow.toISOString()}`);
+}
+
+// Periodic maintenance job: runs every 6 hours
+async function startMaintenanceJobs() {
+  console.log("🔧 Iniciando maintenance jobs...");
+  
+  // Run immediately
+  await runMaintenance();
+  
+  // Then every 6 hours
+  setInterval(runMaintenance, 6 * 60 * 60 * 1000);
+}
+
+async function runMaintenance() {
+  console.log("🔧 Running maintenance tasks...");
+  
+  // Clean expired weather cache
+  await OpenWeatherService.cleanExpiredCache();
+  
+  // Update refugio distances to emergencies
+  await RefugiosService.updateRefugioDistances();
+  
+  console.log("✅ Maintenance completed");
 }
 
 async function runScrapers() {
@@ -128,6 +199,9 @@ async function runScrapers() {
 async function main() {
   await initializeDatabase();
   await startScrapers();
+  await startCleanupJob();
+  await startStatsAggregationJob();
+  await startMaintenanceJobs();
 
   serve({ fetch: app.fetch, port: 3000 });
   console.log("🚀 Servidor corriendo en http://localhost:3000");

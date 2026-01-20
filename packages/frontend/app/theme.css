@@ -1,0 +1,189 @@
+/**
+ * Time-based theme system for Emergencias Chile
+ * Light theme: 6:00 AM - 7:59 PM (Day)
+ * Dark theme: 8:00 PM - 5:59 AM (Night)
+ */
+
+/* Base CSS Variables */
+:root {
+  /* Light theme colors (default - daytime) */
+  --theme-bg-primary: 248 250 252; /* slate-50 */
+  --theme-bg-secondary: 241 245 249; /* slate-100 */
+  --theme-bg-tertiary: 226 232 240; /* slate-200 */
+  
+  --theme-text-primary: 15 23 42; /* slate-900 */
+  --theme-text-secondary: 51 65 85; /* slate-700 */
+  --theme-text-muted: 100 116 139; /* slate-500 */
+  
+  --theme-border: 226 232 240; /* slate-200 */
+  --theme-border-strong: 203 213 225; /* slate-300 */
+  
+  --theme-accent: 59 130 246; /* blue-500 */
+  --theme-accent-hover: 37 99 235; /* blue-600 */
+  --theme-accent-light: 219 234 254; /* blue-100 */
+  
+  /* Alerts & Severity */
+  --theme-critical: 239 68 68; /* red-500 */
+  --theme-high: 251 146 60; /* orange-400 */
+  --theme-medium: 250 204 21; /* yellow-400 */
+  --theme-low: 34 197 94; /* green-500 */
+  
+  /* Emergency types */
+  --theme-seismo: 139 92 246; /* violet-500 */
+  --theme-incendio: 249 115 22; /* orange-500 */
+  --theme-tsunami: 14 165 233; /* sky-500 */
+  --theme-alerta: 234 179 8; /* yellow-500 */
+  
+  /* Map & widgets */
+  --theme-map-overlay: 255 255 255; /* white */
+  --theme-map-overlay-alpha: rgba(255, 255, 255, 0.95);
+  --theme-widget-bg: 255 255 255; /* white */
+  --theme-widget-shadow: rgba(0, 0, 0, 0.1);
+  
+  /* Success, Warning, Info */
+  --theme-success: 34 197 94; /* green-500 */
+  --theme-warning: 245 158 11; /* amber-500 */
+  --theme-info: 59 130 246; /* blue-500 */
+}
+
+/* Dark theme colors (nighttime) */
+.dark {
+  --theme-bg-primary: 15 23 42; /* slate-900 */
+  --theme-bg-secondary: 30 41 59; /* slate-800 */
+  --theme-bg-tertiary: 51 65 85; /* slate-700 */
+  
+  --theme-text-primary: 248 250 252; /* slate-50 */
+  --theme-text-secondary: 226 232 240; /* slate-200 */
+  --theme-text-muted: 148 163 184; /* slate-400 */
+  
+  --theme-border: 51 65 85; /* slate-700 */
+  --theme-border-strong: 71 85 105; /* slate-600 */
+  
+  --theme-accent: 96 165 250; /* blue-400 */
+  --theme-accent-hover: 59 130 246; /* blue-500 */
+  --theme-accent-light: 30 58 138; /* blue-900 */
+  
+  /* Alerts & Severity (brighter for dark mode) */
+  --theme-critical: 248 113 113; /* red-400 */
+  --theme-high: 251 146 60; /* orange-400 */
+  --theme-medium: 250 204 21; /* yellow-400 */
+  --theme-low: 74 222 128; /* green-400 */
+  
+  /* Emergency types (brighter for dark mode) */
+  --theme-seismo: 167 139 250; /* violet-400 */
+  --theme-incendio: 251 146 60; /* orange-400 */
+  --theme-tsunami: 56 189 248; /* sky-400 */
+  --theme-alerta: 250 204 21; /* yellow-400 */
+  
+  /* Map & widgets */
+  --theme-map-overlay: 30 41 59; /* slate-800 */
+  --theme-map-overlay-alpha: rgba(30, 41, 59, 0.95);
+  --theme-widget-bg: 30 41 59; /* slate-800 */
+  --theme-widget-shadow: rgba(0, 0, 0, 0.5);
+  
+  /* Success, Warning, Info (brighter) */
+  --theme-success: 74 222 128; /* green-400 */
+  --theme-warning: 251 191 36; /* amber-400 */
+  --theme-info: 96 165 250; /* blue-400 */
+}
+
+/* Utility classes using theme variables */
+.theme-bg-primary {
+  background-color: rgb(var(--theme-bg-primary));
+}
+
+.theme-bg-secondary {
+  background-color: rgb(var(--theme-bg-secondary));
+}
+
+.theme-bg-tertiary {
+  background-color: rgb(var(--theme-bg-tertiary));
+}
+
+.theme-text-primary {
+  color: rgb(var(--theme-text-primary));
+}
+
+.theme-text-secondary {
+  color: rgb(var(--theme-text-secondary));
+}
+
+.theme-text-muted {
+  color: rgb(var(--theme-text-muted));
+}
+
+.theme-border {
+  border-color: rgb(var(--theme-border));
+}
+
+.theme-border-strong {
+  border-color: rgb(var(--theme-border-strong));
+}
+
+/* Emergency severity badges */
+.severity-critica {
+  background-color: rgb(var(--theme-critical));
+  color: white;
+}
+
+.severity-alta {
+  background-color: rgb(var(--theme-high));
+  color: white;
+}
+
+.severity-media {
+  background-color: rgb(var(--theme-medium));
+  color: rgb(var(--theme-bg-primary));
+}
+
+.severity-baja {
+  background-color: rgb(var(--theme-low));
+  color: white;
+}
+
+/* Emergency type colors */
+.tipo-seismo {
+  color: rgb(var(--theme-seismo));
+}
+
+.tipo-incendio {
+  color: rgb(var(--theme-incendio));
+}
+
+.tipo-tsunami {
+  color: rgb(var(--theme-tsunami));
+}
+
+.tipo-alerta {
+  color: rgb(var(--theme-alerta));
+}
+
+/* Widget styling */
+.theme-widget {
+  background-color: rgb(var(--theme-widget-bg));
+  border: 1px solid rgb(var(--theme-border));
+  box-shadow: 0 4px 6px var(--theme-widget-shadow);
+  color: rgb(var(--theme-text-primary));
+}
+
+.theme-widget:hover {
+  border-color: rgb(var(--theme-border-strong));
+}
+
+/* Map overlay panels */
+.theme-map-panel {
+  background-color: var(--theme-map-overlay-alpha);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgb(var(--theme-border));
+  color: rgb(var(--theme-text-primary));
+}
+
+/* Smooth theme transitions */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Override transitions for animations that shouldn't be smooth */
+.no-theme-transition {
+  transition: none !important;
+}
