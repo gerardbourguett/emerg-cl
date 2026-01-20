@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { EMERGENCY_NUMBERS } from "../../data/albergues";
+import { Phone } from "lucide-react";
 
 export function EmergencyNumbers() {
     const [isOpen, setIsOpen] = useState(false);
@@ -9,11 +10,11 @@ export function EmergencyNumbers() {
             {/* Minimalist Floating Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 z-[999] group flex items-center gap-2 pr-4 pl-3 py-3 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-900/20 rounded-full transition-all hover:scale-105 active:scale-95"
+                className="fixed bottom-6 left-6 z-[999] group flex items-center gap-2 pr-4 pl-3 py-3 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-[var(--primary-foreground)] shadow-lg shadow-black/20 rounded-full transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/10"
                 title="Números de Emergencia"
             >
-                <div className="bg-white/20 p-1.5 rounded-full">
-                    <span className="text-xl">📞</span>
+                <div className="p-1.5 rounded-full">
+                    <Phone className="w-5 h-5 text-white fill-current" />
                 </div>
                 <span className="font-semibold text-sm tracking-wide hidden md:block">SOS</span>
             </button>
@@ -53,7 +54,7 @@ export function EmergencyNumbers() {
                                 >
                                     <span
                                         className={`font-bold text-slate-200 group-hover:text-red-400 transition-colors mb-1 ${item.number.length > 12 ? "text-sm md:text-base leading-tight" :
-                                                item.number.length > 8 ? "text-lg md:text-xl" : "text-2xl"
+                                            item.number.length > 8 ? "text-lg md:text-xl" : "text-2xl"
                                             }`}
                                     >
                                         {item.number}

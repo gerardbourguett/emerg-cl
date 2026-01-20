@@ -69,8 +69,13 @@ app.get("/api/meteo/condiciones", async (c) => {
 });
 
 app.get("/api/conaf/situacion", async (c) => {
-  const data = await ConafService.getSituacion();
-  return c.json({ source: "CONAF", data });
+  try {
+    const data = await ConafService.getSituacion();
+    return c.json({ source: "CONAF", data });
+  } catch (error) {
+    console.error("Error in /api/conaf/situacion:", error);
+    return c.json({ source: "CONAF", data: null, error: "Internal Server Error" }, 500);
+  }
 });
 
 // Iniciar scrapers en background
@@ -87,10 +92,10 @@ async function startScrapers() {
 // Cleanup job: runs every hour to delete data older than 24h
 async function startCleanupJob() {
   console.log("🗑️  Iniciando cleanup job...");
-  
+
   // Run immediately
   await cleanupOldEmergencies();
-  
+
   // Then every hour
   setInterval(async () => {
     await cleanupOldEmergencies();
@@ -100,47 +105,47 @@ async function startCleanupJob() {
 // Stats aggregation job: runs once per day at midnight
 async function startStatsAggregationJob() {
   console.log("📊 Iniciando stats aggregation job...");
-  
+
   // Calculate time until next midnight
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
   const msUntilMidnight = tomorrow.getTime() - now.getTime();
-  
+
   // Run at midnight
   setTimeout(async () => {
     await aggregateDailyStats();
-    
+
     // Then every 24 hours
     setInterval(async () => {
       await aggregateDailyStats();
     }, 24 * 60 * 60 * 1000);
   }, msUntilMidnight);
-  
+
   console.log(`   Next run at: ${tomorrow.toISOString()}`);
 }
 
 // Periodic maintenance job: runs every 6 hours
 async function startMaintenanceJobs() {
   console.log("🔧 Iniciando maintenance jobs...");
-  
+
   // Run immediately
   await runMaintenance();
-  
+
   // Then every 6 hours
   setInterval(runMaintenance, 6 * 60 * 60 * 1000);
 }
 
 async function runMaintenance() {
   console.log("🔧 Running maintenance tasks...");
-  
+
   // Clean expired weather cache
   await OpenWeatherService.cleanExpiredCache();
-  
+
   // Update refugio distances to emergencies
   await RefugiosService.updateRefugioDistances();
-  
+
   console.log("✅ Maintenance completed");
 }
 

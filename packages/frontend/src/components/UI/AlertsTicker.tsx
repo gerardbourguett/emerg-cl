@@ -28,6 +28,40 @@ export function AlertsTicker() {
     );
     const [activeTab, setActiveTab] = useState<"eventos" | "albergues">("eventos");
     const [collapsed, setCollapsed] = useState(true);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        setIsDragging(true);
+        setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!isDragging) return;
+        setPosition({
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y
+        });
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener("mousemove", handleMouseMove);
+            window.addEventListener("mouseup", handleMouseUp);
+        } else {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        }
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [isDragging]);
 
     useEffect(() => {
         // Fetch Events
@@ -44,12 +78,19 @@ export function AlertsTicker() {
     if (events.length === 0 && albergues.length === 0) return null;
 
     return (
-        <div className="absolute top-[80px] md:top-24 left-4 right-4 md:left-6 md:right-auto z-[990] md:w-80 pointer-events-none transition-all flex flex-col gap-2">
+        <div
+            style={{
+                transform: `translate(${position.x}px, ${position.y}px)`,
+                cursor: isDragging ? "grabbing" : "auto"
+            }}
+            className="absolute top-[80px] md:top-24 left-4 right-4 md:left-6 md:right-auto z-[990] md:w-80 pointer-events-none transition-transform duration-75 flex flex-col gap-2"
+        >
             <div className="bg-slate-950/80 backdrop-blur-md border border-slate-800/80 rounded-xl overflow-hidden shadow-xl shadow-black/20 pointer-events-auto ring-1 ring-white/5">
                 {/* Compact Header */}
                 <div
-                    onClick={() => setCollapsed(!collapsed)}
-                    className="flex items-center justify-between px-4 py-3 bg-slate-900/60 cursor-pointer hover:bg-slate-900/80 transition-colors"
+                    onMouseDown={handleMouseDown}
+                    className="flex items-center justify-between px-4 py-3 bg-slate-900/60 cursor-grab active:cursor-grabbing hover:bg-slate-900/80 transition-colors select-none"
+                    title="Arrastrar para mover"
                 >
                     <div className="flex items-center gap-2.5">
                         <span className="relative flex h-2.5 w-2.5">
@@ -59,8 +100,13 @@ export function AlertsTicker() {
                         <span className="text-slate-200 text-sm font-semibold tracking-wide">SENAPRED</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                        <span>{collapsed ? "Mostrar" : "Ocultar"}</span>
-                        <span className={`transform transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`}>▼</span>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setCollapsed(!collapsed); }}
+                            className="flex items-center gap-1 hover:text-slate-300 transition-colors"
+                        >
+                            <span>{collapsed ? "Mostrar" : "Ocultar"}</span>
+                            <span className={`transform transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`}>▼</span>
+                        </button>
                     </div>
                 </div>
 
@@ -90,7 +136,7 @@ export function AlertsTicker() {
                         </div>
 
                         {/* List */}
-                        <div className="max-h-60 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                        <div className="max-h-60 overflow-y-auto p-2 space-y-1 custom-scrollbar" onMouseDown={e => e.stopPropagation()}>
                             {activeTab === "eventos" ? (
                                 <>
                                     {events.map((e, i) => (

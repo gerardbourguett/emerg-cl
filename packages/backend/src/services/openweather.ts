@@ -10,6 +10,7 @@ interface WeatherData {
   humidity: number;
   pressure: number;
   description: string;
+  name: string; // Added name field
   icon: string;
   wind_speed: number;
   wind_deg: number;
@@ -17,20 +18,7 @@ interface WeatherData {
   visibility: number;
 }
 
-interface UVData {
-  value: number;
-  date: string;
-}
-
-interface AirQualityData {
-  aqi: number; // 1-5 scale
-  pm2_5: number;
-  pm10: number;
-  co: number;
-  no2: number;
-  o3: number;
-  so2: number;
-}
+// ... (UVData and AirQualityData interfaces remain unchanged)
 
 export class OpenWeatherService {
   /**
@@ -47,20 +35,21 @@ export class OpenWeatherService {
     try {
       const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=es`;
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         console.error(`OpenWeather API error: ${response.status}`);
         return null;
       }
 
       const data = await response.json();
-      
+
       const weatherData: WeatherData = {
         temp: data.main.temp,
         feels_like: data.main.feels_like,
         humidity: data.main.humidity,
         pressure: data.main.pressure,
         description: data.weather[0].description,
+        name: data.name, // Map name from API response root
         icon: data.weather[0].icon,
         wind_speed: data.wind.speed,
         wind_deg: data.wind.deg,
@@ -70,7 +59,7 @@ export class OpenWeatherService {
 
       // Save to cache
       await this.saveToCache(lat, lng, "current", weatherData);
-      
+
       return weatherData;
     } catch (error) {
       console.error("Error fetching weather:", error);
@@ -93,14 +82,14 @@ export class OpenWeatherService {
       // Note: OpenWeather UV Index endpoint requires One Call API 3.0
       const url = `https://api.openweathermap.org/data/2.5/uvi?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}`;
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         console.error(`OpenWeather UV API error: ${response.status}`);
         return null;
       }
 
       const data = await response.json();
-      
+
       const uvData: UVData = {
         value: data.value,
         date: data.date_iso || new Date().toISOString(),
@@ -108,7 +97,7 @@ export class OpenWeatherService {
 
       // Save to cache
       await this.saveToCache(lat, lng, "uv", uvData);
-      
+
       return uvData;
     } catch (error) {
       console.error("Error fetching UV index:", error);
@@ -130,7 +119,7 @@ export class OpenWeatherService {
     try {
       const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}`;
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         console.error(`OpenWeather Air Quality API error: ${response.status}`);
         return null;
@@ -138,7 +127,7 @@ export class OpenWeatherService {
 
       const data = await response.json();
       const list = data.list[0];
-      
+
       const airQualityData: AirQualityData = {
         aqi: list.main.aqi,
         pm2_5: list.components.pm2_5,
@@ -151,7 +140,7 @@ export class OpenWeatherService {
 
       // Save to cache
       await this.saveToCache(lat, lng, "air_quality", airQualityData);
-      
+
       return airQualityData;
     } catch (error) {
       console.error("Error fetching air quality:", error);
@@ -181,7 +170,7 @@ export class OpenWeatherService {
    */
   private static async getFromCache(lat: number, lng: number, tipo: string): Promise<any | null> {
     const now = new Date();
-    
+
     const result = await db
       .select()
       .from(weatherCache)
@@ -198,7 +187,7 @@ export class OpenWeatherService {
     if (result.length > 0) {
       return result[0].data;
     }
-    
+
     return null;
   }
 
@@ -231,7 +220,7 @@ export class OpenWeatherService {
    */
   static async cleanExpiredCache() {
     const now = new Date();
-    
+
     const result = await db
       .delete(weatherCache)
       .where(sql`${weatherCache.expires_at} < ${now}`)

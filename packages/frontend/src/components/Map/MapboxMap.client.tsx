@@ -18,6 +18,13 @@ import { ALBERGUES_DATA } from "../../data/albergues";
 // Mapbox access token
 mapboxgl.accessToken = "pk.eyJ1IjoiZ2VyYXJkYm91cmd1ZXR0IiwiYSI6ImNtNTZ3emZxbDNqeHoycXE2dWFyYmYyeXYifQ.pwHT8EVzcl6ImooofWgmcw";
 
+// Map styles for light/dark/satellite
+const MAP_STYLES = {
+  light: "mapbox://styles/mapbox/light-v11",
+  dark: "mapbox://styles/mapbox/dark-v11",
+  satellite: "mapbox://styles/mapbox/satellite-streets-v12",
+};
+
 const TERRITORIES = {
   continental: { center: [-71, -35] as [number, number], zoom: 5 },
   pascua: { center: [-109.35, -27.11] as [number, number], zoom: 11 },
@@ -33,11 +40,7 @@ const EMERGENCY_ICONS: Record<string, string> = {
   tsunami: "🌊",
 };
 
-// Map styles for light/dark themes
-const MAP_STYLES = {
-  light: "mapbox://styles/mapbox/light-v11",
-  dark: "mapbox://styles/mapbox/dark-v11",
-};
+
 
 export default function MapboxMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -49,18 +52,28 @@ export default function MapboxMap() {
   const [filter, setFilter] = useState("all");
   const [selectedEmergency, setSelectedEmergency] = useState<Emergency | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [showAlbergues, setShowAlbergues] = useState(true);
+  // showAlbergues state removed in favor of filter logic
 
   const { theme } = useTheme();
+  // Local style state to allow toggling satellite independently of theme
+  const [currentStyle, setCurrentStyle] = useState<string>(theme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light);
+  const [isSatellite, setIsSatellite] = useState(false);
+
+  // Track map center for weather widget
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(TERRITORIES.continental.center as any);
 
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
+    // Use explicit center coordinates for initialization
+    const initialCenter = TERRITORIES.continental.center;
+    setMapCenter({ lat: initialCenter[1], lng: initialCenter[0] });
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: MAP_STYLES[theme],
-      center: TERRITORIES.continental.center,
+      style: currentStyle,
+      center: initialCenter,
       zoom: TERRITORIES.continental.zoom,
       pitch: 0,
       bearing: 0,
@@ -69,6 +82,12 @@ export default function MapboxMap() {
     map.current.on("load", () => {
       setMapLoaded(true);
       console.log("🗺️  Mapbox map loaded");
+    });
+
+    // Update center on move end
+    map.current.on("moveend", () => {
+      const center = map.current!.getCenter();
+      setMapCenter({ lat: center.lat, lng: center.lng });
     });
 
     // Add navigation controls
@@ -88,13 +107,32 @@ export default function MapboxMap() {
     };
   }, []);
 
-  // Update map style when theme changes
+  // Update map style when theme changes (only if not in satellite mode)
   useEffect(() => {
-    if (!map.current || !mapLoaded) return;
+    if (!map.current || !mapLoaded || isSatellite) return;
 
-    map.current.setStyle(MAP_STYLES[theme]);
+    const newStyle = theme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
+    map.current.setStyle(newStyle);
+    setCurrentStyle(newStyle);
     console.log(`🎨 Map style changed to ${theme} mode`);
-  }, [theme, mapLoaded]);
+  }, [theme, mapLoaded, isSatellite]);
+
+  const toggleSatellite = () => {
+    if (!map.current) return;
+
+    if (isSatellite) {
+      // Revert to theme
+      const themeStyle = theme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
+      map.current.setStyle(themeStyle);
+      setCurrentStyle(themeStyle);
+      setIsSatellite(false);
+    } else {
+      // Switch to satellite
+      map.current.setStyle(MAP_STYLES.satellite);
+      setCurrentStyle(MAP_STYLES.satellite);
+      setIsSatellite(true);
+    }
+  };
 
   // Fetch emergencies
   const loadEmergencies = async () => {
@@ -125,6 +163,9 @@ export default function MapboxMap() {
 
     // Filter emergencies
     const filteredEmergencies = emergencies.filter((e) => {
+      // If filtering for albergues specifically, hide emergencies
+      if (filter === "albergues") return false;
+
       if (filter === "all") return true;
       if (filter === "alerta") return e.fuente === "SENAPRED Telegram";
       return e.tipo === filter;
@@ -174,12 +215,13 @@ export default function MapboxMap() {
     alberguesMarkersRef.current.forEach((marker) => marker.remove());
     alberguesMarkersRef.current = [];
 
-    // Only add if showAlbergues is true
+    // Only add if filter is 'all' or 'albergues'
+    const showAlbergues = filter === "all" || filter === "albergues";
     if (!showAlbergues) return;
 
     // Add markers for albergues
     ALBERGUES_DATA.forEach((albergue) => {
-      const el = createAlbergueMarkerElement();
+      const el = createAlbergueMarkerElement(albergue);
 
       // Create popup with albergue info
       const popup = new mapboxgl.Popup({
@@ -196,7 +238,7 @@ export default function MapboxMap() {
 
       alberguesMarkersRef.current.push(marker);
     });
-  }, [mapLoaded, showAlbergues]);
+  }, [mapLoaded, filter]);
 
   // Fly to territory
   const handleFlyTo = (territory: keyof typeof TERRITORIES) => {
@@ -221,6 +263,26 @@ export default function MapboxMap() {
       {/* Critical alerts banner */}
       <AlertBanner emergencies={emergencies} />
 
+      {/* Satellite Toggle Button */}
+      <button
+        onClick={toggleSatellite}
+        className="absolute bottom-32 right-3 md:bottom-24 md:right-14 z-[990] bg-card/80 backdrop-blur-md p-2 rounded-lg border border-border shadow-lg hover:bg-card transition-colors group"
+        title={isSatellite ? "Ver Mapa Base" : "Ver Satélite"}
+      >
+        <div className="relative w-8 h-8 rounded-md overflow-hidden border border-border/50">
+          {isSatellite ? (
+            // Show "Map" preview when in Satellite mode
+            <div className="w-full h-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-700">MAP</div>
+          ) : (
+            // Show "Satellite" preview (simplified visual)
+            <div className="w-full h-full bg-emerald-900 flex items-center justify-center">
+              <div className="w-full h-1/2 bg-blue-500/50 absolute bottom-0"></div>
+              <span className="relative z-10 text-[8px] text-white font-bold drop-shadow-md">SAT</span>
+            </div>
+          )}
+        </div>
+      </button>
+
       <MapControls
         emergencies={emergencies}
         filter={filter}
@@ -228,23 +290,13 @@ export default function MapboxMap() {
         onFlyTo={handleFlyTo}
       />
 
+      {/* AlertsTicker removed as per user request to clean up UI
       <AlertsTicker />
-      <EnhancedWeatherWidget />
+      */}
+      <EnhancedWeatherWidget lat={mapCenter.lat} lng={mapCenter.lng} />
       <StatsWidget />
 
-      {/* Albergues Toggle Button */}
-      <div className="absolute top-6 right-6 z-[999]">
-        <button
-          onClick={() => setShowAlbergues(!showAlbergues)}
-          className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${showAlbergues
-              ? "bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-              : "bg-slate-900/80 backdrop-blur-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5"
-            }`}
-          title={showAlbergues ? "Ocultar Albergues" : "Mostrar Albergues"}
-        >
-          ⛺ Albergues ({ALBERGUES_DATA.length})
-        </button>
-      </div>
+      {/* Albergues Toggle Button removed (moved to filter) */}
 
       {/* Mapbox container */}
       <div ref={mapContainer} className="w-full h-full z-0" />
@@ -415,7 +467,7 @@ function createPopupHTML(emergency: Emergency): string {
 /**
  * Create a custom marker element for an albergue
  */
-function createAlbergueMarkerElement(): HTMLDivElement {
+function createAlbergueMarkerElement(albergues?: any): HTMLDivElement {
   const container = document.createElement("div");
   container.className = "albergue-marker-container";
   container.style.cssText = `

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Cloud, Droplets, Wind, Eye, Gauge, Sun, Moon } from "lucide-react";
+import { Cloud, Droplets, Wind, Eye, Gauge, Sun, Moon, CloudRain, CloudLightning, Snowflake, CloudFog, CloudSun, CloudMoon } from "lucide-react";
 import { Card } from "~/components/ui/card";
 
 interface WeatherData {
@@ -8,6 +8,7 @@ interface WeatherData {
   humidity: number;
   pressure: number;
   description: string;
+  name: string;
   icon: string;
   wind_speed: number;
   wind_deg: number;
@@ -32,31 +33,33 @@ interface AirQualityData {
 
 const SANTIAGO_COORDS = { lat: -33.45, lng: -70.65 };
 
-export function EnhancedWeatherWidget() {
+export function EnhancedWeatherWidget({ lat, lng }: { lat: number; lng: number }) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [uv, setUV] = useState<UVData | null>(null);
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
 
   useEffect(() => {
     loadWeatherData();
     // Refresh every 30 minutes
     const interval = setInterval(loadWeatherData, 30 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [lat, lng]); // Reload when location changes
 
   const loadWeatherData = async () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/weather/all?lat=${SANTIAGO_COORDS.lat}&lng=${SANTIAGO_COORDS.lng}`,
+        `/api/weather/all?lat=${lat}&lng=${lng}`,
       );
       const data = await response.json();
 
       setWeather(data.current);
       setUV(data.uv);
       setAirQuality(data.airQuality);
+      setLastUpdated(new Date().toLocaleTimeString("es-CL"));
     } catch (err) {
       console.error("Error loading weather:", err);
     } finally {
@@ -99,6 +102,36 @@ export function EnhancedWeatherWidget() {
   const uvLevel = uv ? getUVLevel(uv.value) : null;
   const aqiLevel = airQuality ? getAQILevel(airQuality.aqi) : null;
 
+  const getWeatherIcon = (iconCode: string) => {
+    // OpenWeatherMap icon codes mapping
+    // https://openweathermap.org/weather-conditions
+    if (iconCode === "01d") return <Sun className="h-full w-full text-yellow-500" />;
+    if (iconCode === "01n") return <Moon className="h-full w-full text-slate-200" />;
+
+    if (iconCode === "02d") return <CloudSun className="h-full w-full text-yellow-400" />;
+    if (iconCode === "02n") return <CloudMoon className="h-full w-full text-slate-400" />;
+
+    if (iconCode.startsWith("03") || iconCode.startsWith("04"))
+      return <Cloud className="h-full w-full text-gray-400" />;
+
+    if (iconCode.startsWith("09") || iconCode.startsWith("10"))
+      return <CloudRain className="h-full w-full text-blue-400" />;
+
+    if (iconCode.startsWith("11"))
+      return <CloudLightning className="h-full w-full text-purple-400" />;
+
+    if (iconCode.startsWith("13"))
+      return <Snowflake className="h-full w-full text-cyan-200" />;
+
+    if (iconCode.startsWith("50"))
+      return <CloudFog className="h-full w-full text-slate-400" />;
+
+    // Default fallback
+    return iconCode.includes("n")
+      ? <Moon className="h-full w-full text-slate-200" />
+      : <Sun className="h-full w-full text-yellow-500" />;
+  };
+
   return (
     <div className="absolute top-20 right-3 md:top-24 md:right-6 z-[998] pointer-events-none">
       <Card
@@ -108,8 +141,8 @@ export function EnhancedWeatherWidget() {
         {/* Collapsed View */}
         {isCollapsed && (
           <div className="p-3 flex items-center gap-3">
-            <div className="text-2xl">
-              {weather.icon.includes("n") ? "🌙" : "☀️"}
+            <div className="h-8 w-8">
+              {getWeatherIcon(weather.icon)}
             </div>
             <div>
               <p className="text-lg font-bold theme-text-primary leading-none">
@@ -128,12 +161,12 @@ export function EnhancedWeatherWidget() {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="text-3xl">
-                  {weather.icon.includes("n") ? "🌙" : "☀️"}
+                <div className="h-10 w-10">
+                  {getWeatherIcon(weather.icon)}
                 </div>
                 <div>
                   <p className="text-sm font-semibold theme-text-secondary">
-                    Santiago, Chile
+                    {weather.name || "Ubicación en Mapa"}
                   </p>
                   <p className="text-2xl font-bold theme-text-primary leading-none">
                     {Math.round(weather.temp)}°C
@@ -242,7 +275,7 @@ export function EnhancedWeatherWidget() {
 
             {/* Timestamp */}
             <p className="text-[10px] theme-text-muted mt-3 text-center opacity-75">
-              Actualizado: {new Date().toLocaleTimeString("es-CL")}
+              Actualizado: {lastUpdated}
             </p>
           </div>
         )}

@@ -1,13 +1,23 @@
 import puppeteer from "puppeteer";
 
 export class ConafService {
+    private static cache: { data: any; timestamp: number } | null = null;
+    private static CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+
     /**
      * Scrapes "Situación Nacional" from CONAF Power BI
      * URL: https://app.powerbi.com/view...
      */
     static async getSituacion() {
+        // Return cached data if valid
+        if (this.cache && Date.now() - this.cache.timestamp < this.CACHE_DURATION) {
+            console.log("Serving CONAF stats from cache");
+            return this.cache.data;
+        }
+
         let browser;
         try {
+            console.log("Launching Puppeteer for CONAF stats...");
             browser = await puppeteer.launch({
                 headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -73,10 +83,18 @@ export class ConafService {
                 };
             });
 
+            // Update cache
+            this.cache = { data, timestamp: Date.now() };
+
             return data;
 
         } catch (error) {
             console.error("Error scraping CONAF Power BI:", error);
+            // Return cached data if available (even if expired) as fallback
+            if (this.cache) {
+                console.log("Serving expired CONAF stats from cache due to error");
+                return this.cache.data;
+            }
             return { error: "Failed to scrape data" };
         } finally {
             if (browser) await browser.close();
