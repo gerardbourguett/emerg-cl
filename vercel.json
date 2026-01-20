@@ -1,9 +1,4 @@
 {
-    "name": "emergencias-chile-frontend",
-    "framework": "vite",
-    "buildCommand": "cd packages/frontend && bun install && bun run build",
-    "outputDirectory": "packages/frontend/build/client",
-    "installCommand": "bun install",
     "rewrites": [
         {
             "source": "/api/(.*)",
