@@ -25,6 +25,7 @@ export function AlertSystem({ emergencies }: AlertSystemProps) {
 
     // Show toast for each new critical emergency
     criticalEmergencies.forEach((emergency) => {
+      /* Toast notifications disabled by user request to prevent saturation
       const icon = getEmergencyIcon(emergency.tipo);
       
       toast.error(`${icon} ${emergency.titulo}`, {
@@ -40,8 +41,9 @@ export function AlertSystem({ emergencies }: AlertSystemProps) {
           },
         },
       });
+      */
 
-      // Mark as shown
+      // Mark as shown so we track them regardless
       shownAlerts.add(emergency.id);
     });
 
@@ -53,11 +55,11 @@ export function AlertSystem({ emergencies }: AlertSystemProps) {
     // Clean up old alerts (older than 24h)
     const oneDayAgo = new Date();
     oneDayAgo.setHours(oneDayAgo.getHours() - 24);
-    
+
     const activeAlerts = emergencies
       .filter((e) => new Date(e.fecha_actualizacion) > oneDayAgo)
       .map((e) => e.id);
-    
+
     const cleanedAlerts = [...shownAlerts].filter((id) => activeAlerts.includes(id));
     localStorage.setItem("shown-alerts", JSON.stringify(cleanedAlerts));
   }, [emergencies]);

@@ -13,6 +13,7 @@ import { AlertBanner } from "../Alerts/AlertBanner";
 import { useTheme } from "../../hooks/useTheme";
 import type { Emergency } from "../../types/emergency";
 import { SEVERITY_COLORS } from "../../types/emergency";
+import { ALBERGUES_DATA } from "../../data/albergues";
 
 // Mapbox access token
 mapboxgl.accessToken = "pk.eyJ1IjoiZ2VyYXJkYm91cmd1ZXR0IiwiYSI6ImNtNTZ3emZxbDNqeHoycXE2dWFyYmYyeXYifQ.pwHT8EVzcl6ImooofWgmcw";
@@ -42,11 +43,13 @@ export default function MapboxMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const alberguesMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   const [emergencies, setEmergencies] = useState<Emergency[]>([]);
   const [filter, setFilter] = useState("all");
   const [selectedEmergency, setSelectedEmergency] = useState<Emergency | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [showAlbergues, setShowAlbergues] = useState(true);
 
   const { theme } = useTheme();
 
@@ -97,7 +100,7 @@ export default function MapboxMap() {
   const loadEmergencies = async () => {
     try {
       // Fetch all emergencies from the main endpoint
-      const response = await fetch("http://localhost:3000/api/emergencias");
+      const response = await fetch("/api/emergencias");
       const data = await response.json();
       setEmergencies(data.emergencies || []);
       console.log(`📊 Loaded ${data.emergencies?.length || 0} emergencies`);
@@ -163,6 +166,38 @@ export default function MapboxMap() {
     });
   }, [emergencies, filter, mapLoaded]);
 
+  // Add albergues markers
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // Clear existing albergues markers
+    alberguesMarkersRef.current.forEach((marker) => marker.remove());
+    alberguesMarkersRef.current = [];
+
+    // Only add if showAlbergues is true
+    if (!showAlbergues) return;
+
+    // Add markers for albergues
+    ALBERGUES_DATA.forEach((albergue) => {
+      const el = createAlbergueMarkerElement();
+
+      // Create popup with albergue info
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: "300px",
+      }).setHTML(createAlberguePopupHTML(albergue));
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+        .setLngLat([albergue.lng, albergue.lat])
+        .setPopup(popup)
+        .addTo(map.current!);
+
+      alberguesMarkersRef.current.push(marker);
+    });
+  }, [mapLoaded, showAlbergues]);
+
   // Fly to territory
   const handleFlyTo = (territory: keyof typeof TERRITORIES) => {
     if (!map.current) return;
@@ -196,6 +231,20 @@ export default function MapboxMap() {
       <AlertsTicker />
       <EnhancedWeatherWidget />
       <StatsWidget />
+
+      {/* Albergues Toggle Button */}
+      <div className="absolute top-6 right-6 z-[999]">
+        <button
+          onClick={() => setShowAlbergues(!showAlbergues)}
+          className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${showAlbergues
+              ? "bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+              : "bg-slate-900/80 backdrop-blur-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          title={showAlbergues ? "Ocultar Albergues" : "Mostrar Albergues"}
+        >
+          ⛺ Albergues ({ALBERGUES_DATA.length})
+        </button>
+      </div>
 
       {/* Mapbox container */}
       <div ref={mapContainer} className="w-full h-full z-0" />
@@ -357,6 +406,103 @@ function createPopupHTML(emergency: Emergency): string {
         
         <p style="margin: 6px 0 0 0; font-size: 11px; color: #94a3b8;">
           📍 ${emergency.lat.toFixed(4)}, ${emergency.lng.toFixed(4)}
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Create a custom marker element for an albergue
+ */
+function createAlbergueMarkerElement(): HTMLDivElement {
+  const container = document.createElement("div");
+  container.className = "albergue-marker-container";
+  container.style.cssText = `
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  `;
+
+  const inner = document.createElement("div");
+  inner.className = "albergue-marker-inner";
+  inner.style.cssText = `
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: #10b981;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  `;
+  inner.innerHTML = "⛺";
+
+  container.addEventListener("mouseenter", () => {
+    inner.style.transform = "scale(1.25)";
+    inner.style.boxShadow = "0 8px 12px rgba(0, 0, 0, 0.5)";
+    inner.style.zIndex = "100";
+    container.style.zIndex = "100";
+  });
+
+  container.addEventListener("mouseleave", () => {
+    inner.style.transform = "scale(1)";
+    inner.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.3)";
+    inner.style.zIndex = "1";
+    container.style.zIndex = "1";
+  });
+
+  container.appendChild(inner);
+  return container;
+}
+
+/**
+ * Create popup HTML content for an albergue
+ */
+function createAlberguePopupHTML(albergue: typeof ALBERGUES_DATA[0]): string {
+  return `
+    <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 250px;">
+      <div style="
+        background: #10b981;
+        color: white;
+        padding: 8px 12px;
+        margin: -10px -10px 10px -10px;
+        border-radius: 3px 3px 0 0;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      ">
+        <span>⛺</span>
+        <span>Albergue SENAPRED</span>
+      </div>
+      
+      <div style="padding: 4px 0;">
+        <h3 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #1e293b;">
+          ${albergue.nombre}
+        </h3>
+        
+        <p style="margin: 0 0 4px 0; font-size: 13px; color: #475569;">
+          <strong>📍 Dirección:</strong> ${albergue.direccion}
+        </p>
+        
+        <p style="margin: 0 0 4px 0; font-size: 13px; color: #475569;">
+          <strong>🏘️ Comuna:</strong> ${albergue.comuna}
+        </p>
+        
+        <p style="margin: 0 0 8px 0; font-size: 13px; color: #475569;">
+          <strong>🗺️ Región:</strong> ${albergue.region}
+        </p>
+        
+        <p style="margin: 6px 0 0 0; font-size: 11px; color: #94a3b8;">
+          Coordenadas: ${albergue.lat.toFixed(4)}, ${albergue.lng.toFixed(4)}
         </p>
       </div>
     </div>

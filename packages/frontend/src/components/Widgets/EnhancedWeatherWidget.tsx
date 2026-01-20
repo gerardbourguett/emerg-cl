@@ -50,7 +50,7 @@ export function EnhancedWeatherWidget() {
     try {
       setLoading(true);
       const response = await fetch(
-        `http://localhost:3000/api/weather/all?lat=${SANTIAGO_COORDS.lat}&lng=${SANTIAGO_COORDS.lng}`,
+        `/api/weather/all?lat=${SANTIAGO_COORDS.lat}&lng=${SANTIAGO_COORDS.lng}`,
       );
       const data = await response.json();
 
