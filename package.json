@@ -1,0 +1,6 @@
+{
+  "name": "emergencias-chile-monorepo",
+  "workspaces": [
+    "packages/*"
+  ]
+}

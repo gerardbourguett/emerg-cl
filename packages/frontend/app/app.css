@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+html,
+body {
+  @apply bg-white dark:bg-gray-950;
+
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+  }
+}
+
+/* Custom Cluster Icons */
+.cluster-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  animation: pulse 2s infinite;
+}
+
+.cluster-small {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  font-size: 12px;
+}
+
+.cluster-medium {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  font-size: 14px;
+}
+
+.cluster-large {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  font-size: 16px;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}

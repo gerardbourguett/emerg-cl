@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergencias Chile - Mapa en Tiempo Real</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+    }
+
+    #header {
+      background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2a2a4a;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    #header h1 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #header h1::before {
+      content: "🚨";
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    #stats {
+      display: flex;
+      gap: 15px;
+      font-size: 0.85rem;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+    }
+
+    .stat-count {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .stat.sismos {
+      color: #ffd93d;
+    }
+
+    .stat.incendios {
+      color: #ff6b6b;
+    }
+
+    .stat.alertas {
+      color: #6bcb77;
+    }
+
+    #territory-nav {
+      display: flex;
+      gap: 5px;
+    }
+
+    .nav-btn {
+      background: rgba(67, 97, 238, 0.2);
+      border: 1px solid rgba(67, 97, 238, 0.4);
+      color: #a0b1ff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(67, 97, 238, 0.4);
+      color: white;
+    }
+
+    #connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff4757;
+    }
+
+    .status-dot.connected {
+      background: #2ed573;
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    #map {
+      height: calc(100vh - 120px);
+      width: 100%;
+    }
+
+    #filters {
+      background: #16213e;
+      padding: 10px 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border-bottom: 1px solid #2a2a4a;
+      flex-wrap: wrap;
+    }
+
+    #filters label {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ddd;
+    }
+
+    .filter-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .filter-btn.active {
+      background: #4361ee;
+      color: white;
+    }
+
+    .filter-btn.seismo.active {
+      background: #ffd93d;
+      color: #000;
+    }
+
+    .filter-btn.incendio.active {
+      background: #ff6b6b;
+      color: #fff;
+    }
+
+    .filter-btn.alerta.active {
+      background: #6bcb77;
+      color: #000;
+    }
+
+    #notify-btn {
+      margin-left: auto;
+      padding: 6px 14px;
+      border: 1px solid #4361ee;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      background: transparent;
+      color: #4361ee;
+      transition: all 0.2s;
+    }
+
+    #notify-btn:hover {
+      background: #4361ee;
+      color: white;
+    }
+
+    #notify-btn.enabled {
+      background: #4361ee;
+      color: white;
+    }
+
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px 40px;
+      border-radius: 10px;
+      z-index: 1000;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: #1a1a2e;
+      color: #eee;
+      border-radius: 8px;
+    }
+
+    .leaflet-popup-tip {
+      background: #1a1a2e;
+    }
+
+    .popup-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .popup-info {
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+
+    .popup-info strong {
+      color: #aaa;
+    }
+
+    .severity-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .severity-critica {
+      background: #ff4757;
+      color: white;
+    }
+
+    .severity-alta {
+      background: #ff6b6b;
+      color: white;
+    }
+
+    .severity-media {
+      background: #ffa502;
+      color: black;
+    }
+
+    .severity-baja {
+      background: #2ed573;
+      color: black;
+    }
+
+    #last-update {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .custom-marker {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .marker-critica {
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+      }
+    }
+
+    /* Toast notifications */
+    #toast-container {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: #16213e;
+      border-left: 4px solid #4361ee;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: slideIn 0.3s ease;
+      max-width: 350px;
+    }
+
+    .toast.critica {
+      border-left-color: #ff4757;
+    }
+
+    .toast.alta {
+      border-left-color: #ff6b6b;
+    }
+
+    .toast.incendio {
+      border-left-color: #ff6b6b;
+    }
+
+    .toast.seismo {
+      border-left-color: #ffd93d;
+    }
+
+    .toast-title {
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+    }
+
+    .toast-body {
+      font-size: 0.75rem;
+      color: #aaa;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Custom Cluster Styles */
+    .marker-cluster-small {
+      background-color: rgba(255, 217, 61, 0.6);
+    }
+
+    .marker-cluster-small div {
+      background-color: rgba(255, 217, 61, 0.8);
+    }
+
+    .marker-cluster-medium {
+      background-color: rgba(255, 165, 2, 0.6);
+    }
+
+    .marker-cluster-medium div {
+      background-color: rgba(255, 165, 2, 0.8);
+    }
+
+    .marker-cluster-large {
+      background-color: rgba(255, 107, 107, 0.6);
+    }
+
+    .marker-cluster-large div {
+      background-color: rgba(255, 107, 107, 0.8);
+    }
+
+    .marker-cluster div {
+      color: #fff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="header">
+    <h1>Emergencias Chile</h1>
+
+    <div class="header-controls">
+      <div id="territory-nav">
+        <button class="nav-btn" onclick="flyTo('continental')">Continental</button>
+        <button class="nav-btn" onclick="flyTo('pascua')">Rapa Nui</button>
+        <button class="nav-btn" onclick="flyTo('antartica')">Antártica</button>
+      </div>
+
+      <div id="stats">
+        <div class="stat sismos">
+          <span>Sismos</span>
+          <span class="stat-count" id="count-sismos">-</span>
+        </div>
+        <div class="stat incendios">
+          <span>Incendios</span>
+          <span class="stat-count" id="count-incendios">-</span>
+        </div>
+        <div class="stat alertas">
+          <span>Alertas</span>
+          <span class="stat-count" id="count-alertas">-</span>
+        </div>
+      </div>
+
+      <div id="connection-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Conectando...</span>
+      </div>
+    </div>
+
+    <div id="last-update" style="width: 100%; text-align: right; margin-top: 5px;">Actualizando...</div>
+  </div>
+
+  <div id="filters">
+    <label>Filtrar:</label>
+    <button class="filter-btn active" data-filter="all">Todos</button>
+    <button class="filter-btn seismo" data-filter="seismo">Sismos</button>
+    <button class="filter-btn incendio" data-filter="incendio_forestal">Incendios</button>
+    <button class="filter-btn alerta" data-filter="alerta">Alertas SENAPRED</button>
+    <button id="notify-btn" onclick="toggleNotifications()">🔔 Activar Notificaciones</button>
+  </div>
+
+  <div id="map"></div>
+  <div id="loading">Cargando emergencias...</div>
+  <div id="toast-container"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script>
+    // Límites del territorio chileno completo (para permitir navegación lejana)
+    const chileBounds = L.latLngBounds(
+      L.latLng(-90, -120), // Suroeste extremo (Antártica + Pacífico)
+      L.latLng(-15, -50)   // Noreste extremo
+    );
+
+    // Mapa principal centrado en Chile continental
+    const map = L.map('map', {
+      center: [-35, -71],
+      zoom: 5,
+      minZoom: 3,
+      maxZoom: 18,
+      maxBounds: chileBounds,
+      maxBoundsViscosity: 0.5
+    });
+
+    // Capa base oscura
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Cluster group
+    const markerClusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      disableClusteringAtZoom: 16
+    });
+    map.addLayer(markerClusterGroup);
+
+    let allEmergencies = [];
+    let currentFilter = 'all';
+    let notificationsEnabled = false;
+    let knownEmergencyIds = new Set();
+    let isFirstLoad = true;
+
+    // Navegación rápida
+    const territories = {
+      continental: { lat: -35, lng: -71, zoom: 5 },
+      pascua: { lat: -27.11, lng: -109.35, zoom: 11 },
+      antartica: { lat: -62.2, lng: -58.9, zoom: 8 }
+    };
+
+    function flyTo(territory) {
+      const target = territories[territory];
+      if (target) {
+        map.flyTo([target.lat, target.lng], target.zoom, {
+          duration: 1.5
+        });
+      }
+    }
+
+    // Iconos personalizados
+    function createIcon(tipo, severidad) {
+      const colors = {
+        seismo: { bg: '#ffd93d', border: '#e6c200', icon: '📍' },
+        incendio_forestal: { bg: '#ff6b6b', border: '#ff4757', icon: '🔥' },
+        alerta_meteorologica: { bg: '#6bcb77', border: '#4caf50', icon: '⚠️' },
+        tsunami: { bg: '#4fc3f7', border: '#03a9f4', icon: '🌊' }
+      };
+
+      const color = colors[tipo] || colors.alerta_meteorologica;
+      const size = severidad === 'critica' ? 24 : severidad === 'alta' ? 20 : 16; // Más pequeños para clustering
+      const pulseClass = severidad === 'critica' ? 'marker-critica' : '';
+
+      return L.divIcon({
+        className: 'custom-marker-wrapper',
+        html: `<div class="custom-marker ${pulseClass}" style="
+          width: ${size}px;
+          height: ${size}px;
+          background: ${color.bg};
+          border: 2px solid ${color.border};
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: ${size * 0.6}px;
+        ">${color.icon}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -size / 2]
+      });
+    }
+
+    // Crear popup
+    function createPopup(e) {
+      const severityClass = `severity-${e.severidad}`;
+      const fecha = new Date(e.fecha_actualizacion).toLocaleString('es-CL');
+
+      return `
+        <div class="popup-title">${e.titulo}</div>
+        <div class="popup-info">
+          <p><strong>Tipo:</strong> ${formatTipo(e.tipo)}</p>
+          <p><strong>Severidad:</strong> <span class="severity-badge ${severityClass}">${e.severidad}</span></p>
+          <p><strong>Fuente:</strong> ${e.fuente}</p>
+          <p><strong>Actualizado:</strong> ${fecha}</p>
+          ${e.descripcion ? `<p style="margin-top:8px;color:#888;font-size:0.75rem;">${e.descripcion.substring(0, 150)}...</p>` : ''}
+        </div>
+      `;
+    }
+
+    function formatTipo(tipo) {
+      const tipos = {
+        seismo: 'Sismo',
+        incendio_forestal: 'Incendio Forestal',
+        alerta_meteorologica: 'Alerta Meteorológica',
+        tsunami: 'Tsunami'
+      };
+      return tipos[tipo] || tipo;
+    }
+
+    // Toast notifications
+    function showToast(emergency) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${emergency.severidad} ${emergency.tipo}`;
+      toast.innerHTML = `
+        <div class="toast-title">🚨 ${emergency.titulo}</div>
+        <div class="toast-body">${emergency.fuente} - ${emergency.severidad.toUpperCase()}</div>
+      `;
+      container.appendChild(toast);
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    // Browser notifications
+    function sendBrowserNotification(emergency) {
+      if (!notificationsEnabled || Notification.permission !== 'granted') return;
+
+      const icon = emergency.tipo === 'incendio_forestal' ? '🔥' :
+        emergency.tipo === 'seismo' ? '📍' : '⚠️';
+
+      new Notification(`${icon} ${emergency.titulo}`, {
+        body: `${emergency.fuente} - Severidad: ${emergency.severidad.toUpperCase()}`,
+        icon: '/favicon.svg',
+        tag: emergency.id,
+        requireInteraction: emergency.severidad === 'critica'
+      });
+    }
+
+    // Toggle notifications
+    async function toggleNotifications() {
+      const btn = document.getElementById('notify-btn');
+
+      if (!notificationsEnabled) {
+        if (Notification.permission === 'default') {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') return;
+        } else if (Notification.permission === 'denied') {
+          alert('Las notificaciones están bloqueadas. Habilítalas en la configuración del navegador.');
+          return;
+        }
+        notificationsEnabled = true;
+        btn.textContent = '🔔 Notificaciones ON';
+        btn.classList.add('enabled');
+      } else {
+        notificationsEnabled = false;
+        btn.textContent = '🔔 Activar Notificaciones';
+        btn.classList.remove('enabled');
+      }
+    }
+
+    // Cargar emergencias
+    async function loadEmergencies() {
+      try {
+        const [sismosRes, incendiosRes] = await Promise.all([
+          fetch('/api/emergencias/tipo/seismo'),
+          fetch('/api/emergencias/tipo/incendio_forestal')
+        ]);
+
+        const sismos = await sismosRes.json();
+        const incendios = await incendiosRes.json();
+
+        const newEmergencies = [
+          ...sismos.emergencies,
+          ...incendios.emergencies
+        ];
+
+        // Detectar nuevas emergencias
+        if (!isFirstLoad) {
+          newEmergencies.forEach(e => {
+            if (!knownEmergencyIds.has(e.id)) {
+              showToast(e);
+              sendBrowserNotification(e);
+            }
+          });
+        }
+
+        // Actualizar IDs conocidos
+        knownEmergencyIds = new Set(newEmergencies.map(e => e.id));
+        allEmergencies = newEmergencies;
+        isFirstLoad = false;
+
+        // Contar por tipo
+        const countSismos = allEmergencies.filter(e => e.tipo === 'seismo').length;
+        const countIncendios = allEmergencies.filter(e => e.tipo === 'incendio_forestal').length;
+        const countAlertas = allEmergencies.filter(e => e.fuente === 'SENAPRED Telegram').length;
+
+        document.getElementById('count-sismos').textContent = countSismos;
+        document.getElementById('count-incendios').textContent = countIncendios;
+        document.getElementById('count-alertas').textContent = countAlertas;
+        document.getElementById('last-update').textContent = `Última actualización: ${new Date().toLocaleTimeString('es-CL')}`;
+
+        // Update connection status
+        document.getElementById('status-dot').classList.add('connected');
+        document.getElementById('status-text').textContent = 'En vivo';
+
+        renderMarkers();
+        document.getElementById('loading').style.display = 'none';
+      } catch (error) {
+        console.error('Error cargando emergencias:', error);
+        document.getElementById('status-dot').classList.remove('connected');
+        document.getElementById('status-text').textContent = 'Desconectado';
+        // Solo mostrar loading si es la primera carga fallida
+        if (allEmergencies.length === 0) {
+          document.getElementById('loading').textContent = 'Error al cargar datos. Reintentando...';
+        }
+        setTimeout(loadEmergencies, 5000);
+      }
+    }
+
+    // Renderizar marcadores
+    function renderMarkers() {
+      // Limpiar cluster group
+      markerClusterGroup.clearLayers();
+
+      // Filtrar emergencias
+      let filtered = allEmergencies;
+      if (currentFilter !== 'all') {
+        if (currentFilter === 'alerta') {
+          filtered = allEmergencies.filter(e => e.fuente === 'SENAPRED Telegram');
+        } else {
+          filtered = allEmergencies.filter(e => e.tipo === currentFilter);
+        }
+      }
+
+      // Crear marcadores
+      const newMarkers = [];
+      filtered.forEach(e => {
+        if (e.lat && e.lng) {
+          const marker = L.marker([e.lat, e.lng], {
+            icon: createIcon(e.tipo, e.severidad)
+          })
+            .bindPopup(createPopup(e));
+          newMarkers.push(marker);
+        }
+      });
+
+      markerClusterGroup.addLayers(newMarkers);
+    }
+
+    // Filtros
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderMarkers();
+      });
+    });
+
+    // Polling para actualizaciones en tiempo real (cada 30 segundos)
+    function startPolling() {
+      loadEmergencies();
+      setInterval(loadEmergencies, 30 * 1000);
+    }
+
+    // Iniciar
+    startPolling();
+  </script>
+</body>
+
+</html>

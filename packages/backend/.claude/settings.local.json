@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(docker exec:*)",
+      "Bash(Start-Process -NoNewWindow bun -ArgumentList \"run\",\"dev\")",
+      "Bash(Start-Sleep -Seconds 8)",
+      "Bash(bun run:*)"
+    ]
+  }
+}

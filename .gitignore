@@ -1,0 +1,8 @@
+# Dependencies
+node_modules
+yarn.lock
+package-lock.json
+
+# Editor
+.vscode
+.env

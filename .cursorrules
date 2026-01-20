@@ -1,0 +1,15 @@
+# Agent Rules
+
+This project is a Monorepo using Bun Workspaces.
+
+## Project Structure
+- `packages/backend`: The backend API (Hono, Postgres).
+- `packages/frontend`: The frontend application (React, React Router).
+
+## Navigation
+- Always check `package.json` in directories to understand available scripts.
+- Use `bun run` for scripts.
+
+## Style
+- Use TypeScript for all new code.
+- Prefer functional components for React.

@@ -1,0 +1,28 @@
+{
+    "name": "emergencias-chile-frontend",
+    "framework": "vite",
+    "buildCommand": "cd packages/frontend && bun install && bun run build",
+    "outputDirectory": "packages/frontend/build/client",
+    "installCommand": "bun install",
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "https://emergencias-chile-backend.up.railway.app/api/$1"
+        }
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "X-Frame-Options",
+                    "value": "DENY"
+                }
+            ]
+        }
+    ]
+}
