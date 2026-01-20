@@ -1,15 +1,10 @@
 import { Marker, Popup, LayersControl } from "react-leaflet";
-import { divIcon } from "leaflet";
-import { renderToStaticMarkup } from "react-dom/server";
+import L from "leaflet";
 import { ALBERGUES_DATA } from "../../data/albergues";
 
 export function AlberguesLayer() {
-    const iconMarkup = renderToStaticMarkup(
-        <div className="text-2xl drop-shadow-lg">⛺</div>
-    );
-
-    const shelterIcon = divIcon({
-        html: iconMarkup,
+    const shelterIcon = L.divIcon({
+        html: '<div style="font-size: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));">⛺</div>',
         className: "bg-transparent",
         iconSize: [32, 32],
         iconAnchor: [16, 32],
