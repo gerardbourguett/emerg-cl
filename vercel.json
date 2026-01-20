@@ -7,7 +7,7 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "https://emergencias-chile-backend.up.railway.app/api/$1"
+            "destination": "postgres-production-93a4.up.railway.app"
         }
     ],
     "headers": [
