@@ -69,7 +69,7 @@ export function EnhancedWeatherWidget({ lat, lng }: { lat: number; lng: number }
 
   if (loading || !weather) {
     return (
-      <div className="absolute top-20 right-3 md:top-24 md:right-6 z-[998] pointer-events-none">
+      <div className="fixed bottom-6 left-24 md:left-32 z-[998] pointer-events-none">
         <Card className="pointer-events-auto theme-widget p-3">
           <div className="flex items-center gap-2">
             <Cloud className="h-5 w-5 animate-pulse theme-text-muted" />
@@ -133,7 +133,7 @@ export function EnhancedWeatherWidget({ lat, lng }: { lat: number; lng: number }
   };
 
   return (
-    <div className="absolute top-20 right-3 md:top-24 md:right-6 z-[998] pointer-events-none">
+    <div className="fixed bottom-6 left-24 md:left-32 z-[998] pointer-events-none">
       <Card
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="pointer-events-auto theme-widget cursor-pointer hover:shadow-xl transition-all"

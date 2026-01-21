@@ -1,5 +1,5 @@
-import { db, emergencies, type EmergencyInsert } from "../db";
-import { eq, and, gte, sql, desc, ne } from "drizzle-orm";
+import { db, emergencies, emergenciesArchive, type EmergencyInsert } from "../db";
+import { eq, and, gte, lt, lte, sql, desc, ne } from "drizzle-orm";
 import type { Emergency } from "../types/emergency";
 
 /**
@@ -137,20 +137,69 @@ export async function getAllEmergencies() {
 }
 
 /**
- * Delete emergencies older than 24 hours
- * This runs as a scheduled job to keep the database clean
+ * Archive emergencies older than 24 hours
+ * Moves data to emergencies_archive table instead of deleting
  */
 export async function cleanupOldEmergencies() {
   const twentyFourHoursAgo = new Date();
   twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-  const result = await db
-    .delete(emergencies)
-    .where(sql`${emergencies.fecha_actualizacion} < ${twentyFourHoursAgo}`)
-    .returning({ id: emergencies.id });
+  // Get old emergencies to archive
+  const oldEmergencies = await db
+    .select()
+    .from(emergencies)
+    .where(lt(emergencies.fecha_actualizacion, twentyFourHoursAgo));
 
-  console.log(`🗑️  Cleaned up ${result.length} old emergencies (>24h)`);
-  return result.length;
+  if (oldEmergencies.length === 0) {
+    console.log("🗑️  No old emergencies to archive");
+    return 0;
+  }
+
+  // Insert into archive table
+  const archiveData = oldEmergencies.map((e) => ({
+    id: e.id,
+    tipo: e.tipo,
+    titulo: e.titulo,
+    descripcion: e.descripcion,
+    lat: e.lat,
+    lng: e.lng,
+    severidad: e.severidad,
+    estado: e.estado,
+    fecha_inicio: e.fecha_inicio,
+    fecha_actualizacion: e.fecha_actualizacion,
+    fuente: e.fuente,
+    metadata: e.metadata,
+  }));
+
+  await db
+    .insert(emergenciesArchive)
+    .values(archiveData)
+    .onConflictDoNothing(); // Ignore if already archived
+
+  // Delete from active table
+  await db
+    .delete(emergencies)
+    .where(lt(emergencies.fecha_actualizacion, twentyFourHoursAgo));
+
+  console.log(`📦 Archived ${oldEmergencies.length} old emergencies (>24h)`);
+  return oldEmergencies.length;
+}
+
+/**
+ * Get archived emergencies within a date range
+ * @param days Number of days to look back (default: 7)
+ */
+export async function getArchivedEmergencies(days: number = 7) {
+  const daysAgo = new Date();
+  daysAgo.setDate(daysAgo.getDate() - days);
+
+  const result = await db
+    .select()
+    .from(emergenciesArchive)
+    .where(gte(emergenciesArchive.fecha_inicio, daysAgo))
+    .orderBy(desc(emergenciesArchive.fecha_inicio));
+
+  return result.map(convertEmergencyFromDb);
 }
 
 /**
@@ -160,7 +209,7 @@ export async function cleanupOldEmergencies() {
 export async function getEmergencyStatsForDate(date: Date) {
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
-  
+
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
@@ -183,7 +232,7 @@ export async function getEmergencyStatsForDate(date: Date) {
     .where(
       and(
         gte(emergencies.fecha_actualizacion, startOfDay),
-        sql`${emergencies.fecha_actualizacion} <= ${endOfDay}`
+        lte(emergencies.fecha_actualizacion, endOfDay)
       )
     );
 
@@ -199,8 +248,8 @@ function convertEmergencyFromDb(dbEmergency: any): any {
     ...dbEmergency,
     lat: parseFloat(dbEmergency.lat),
     lng: parseFloat(dbEmergency.lng),
-    metadata: typeof dbEmergency.metadata === 'string' 
-      ? JSON.parse(dbEmergency.metadata) 
+    metadata: typeof dbEmergency.metadata === 'string'
+      ? JSON.parse(dbEmergency.metadata)
       : dbEmergency.metadata,
   };
 }

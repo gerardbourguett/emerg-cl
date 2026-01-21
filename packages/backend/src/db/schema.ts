@@ -118,6 +118,34 @@ export const emergencyStatsDaily = pgTable(
 );
 
 /**
+ * Emergencies Archive - Historical emergency data
+ * Stores emergencies older than 24 hours for historical analysis
+ */
+export const emergenciesArchive = pgTable(
+  "emergencies_archive",
+  {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    tipo: varchar("tipo", { length: 50 }).notNull(),
+    titulo: text("titulo").notNull(),
+    descripcion: text("descripcion"),
+    lat: numeric("lat", { precision: 11, scale: 8 }).notNull(),
+    lng: numeric("lng", { precision: 11, scale: 8 }).notNull(),
+    severidad: varchar("severidad", { length: 20 }).notNull(),
+    estado: varchar("estado", { length: 20 }).notNull(),
+    fecha_inicio: timestamp("fecha_inicio").notNull(),
+    fecha_actualizacion: timestamp("fecha_actualizacion").notNull(),
+    fuente: varchar("fuente", { length: 100 }).notNull(),
+    metadata: jsonb("metadata"),
+    archived_at: timestamp("archived_at").notNull().default(sql`NOW()`),
+  },
+  (table) => ({
+    tipoIdx: index("idx_archive_tipo").on(table.tipo),
+    fechaInicioIdx: index("idx_archive_fecha_inicio").on(table.fecha_inicio),
+    archivedAtIdx: index("idx_archive_archived_at").on(table.archived_at),
+  })
+);
+
+/**
  * Weather Cache - Cache for OpenWeatherMap API calls
  * Reduces API calls and improves performance
  */
@@ -149,3 +177,6 @@ export type EmergencyStatsDaily = typeof emergencyStatsDaily.$inferSelect;
 export type EmergencyStatsDailyInsert = typeof emergencyStatsDaily.$inferInsert;
 export type WeatherCache = typeof weatherCache.$inferSelect;
 export type WeatherCacheInsert = typeof weatherCache.$inferInsert;
+export type EmergencyArchive = typeof emergenciesArchive.$inferSelect;
+export type EmergencyArchiveInsert = typeof emergenciesArchive.$inferInsert;
+

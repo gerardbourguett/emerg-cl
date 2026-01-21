@@ -1,8 +1,7 @@
-import { Suspense, lazy, useEffect } from "react";
+import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
 import { useTheme } from "../../src/hooks/useTheme";
-
-const MapboxMap = lazy(() => import("../../src/components/Map/MapboxMap.client"));
+import MapboxMap from "../../src/components/Map/MapboxMap.client";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -13,10 +12,22 @@ export function meta({ }: Route.MetaArgs) {
 
 export default function Home() {
   const { theme } = useTheme();
+  const [isClient, setIsClient] = useState(false);
 
-  return (
-    <Suspense fallback={<div className="h-screen w-full theme-bg-primary theme-text-primary flex items-center justify-center">Cargando mapa...</div>}>
-      <MapboxMap />
-    </Suspense>
-  );
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className="h-screen w-full bg-slate-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🗺️</div>
+          <p className="text-lg">Cargando mapa...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <MapboxMap />;
 }

@@ -1,5 +1,5 @@
 import { db, weatherCache, type WeatherCacheInsert } from "../db";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, lt, sql } from "drizzle-orm";
 
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || "08506bf62b00d97381dcfefda705fe0b";
 const CACHE_DURATION_MINUTES = 30; // Cache weather data for 30 minutes
@@ -18,7 +18,20 @@ interface WeatherData {
   visibility: number;
 }
 
-// ... (UVData and AirQualityData interfaces remain unchanged)
+interface UVData {
+  value: number;
+  date: string;
+}
+
+interface AirQualityData {
+  aqi: number;
+  pm2_5: number;
+  pm10: number;
+  co: number;
+  no2: number;
+  o3: number;
+  so2: number;
+}
 
 export class OpenWeatherService {
   /**
@@ -223,7 +236,7 @@ export class OpenWeatherService {
 
     const result = await db
       .delete(weatherCache)
-      .where(sql`${weatherCache.expires_at} < ${now}`)
+      .where(lt(weatherCache.expires_at, now))
       .returning({ id: weatherCache.id });
 
     console.log(`🗑️  Cleaned up ${result.length} expired weather cache entries`);

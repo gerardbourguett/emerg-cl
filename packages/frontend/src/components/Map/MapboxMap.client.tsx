@@ -5,9 +5,9 @@ import { Toaster } from "sonner";
 import { MapControls } from "../UI/MapControls";
 import { AlertsTicker } from "../UI/AlertsTicker";
 import { EnhancedWeatherWidget } from "../Widgets/EnhancedWeatherWidget";
-import { StatsWidget } from "../UI/StatsWidget";
 import { EmergencyNumbers } from "../UI/EmergencyNumbers";
 import { EmergencyDetailPanel } from "../UI/EmergencyDetailPanel";
+import { EmergencySidebar } from "../UI/EmergencySidebar";
 import { AlertSystem } from "../Alerts/AlertSystem";
 import { AlertBanner } from "../Alerts/AlertBanner";
 import { useTheme } from "../../hooks/useTheme";
@@ -252,6 +252,21 @@ export default function MapboxMap() {
     });
   };
 
+  // Handle emergency click from sidebar
+  const handleEmergencyClick = (emergency: Emergency) => {
+    if (!map.current) return;
+
+    // Fly to emergency location
+    map.current.flyTo({
+      center: [emergency.lng, emergency.lat],
+      zoom: 14,
+      duration: 1500,
+    });
+
+    // Set as selected emergency for detail panel
+    setSelectedEmergency(emergency);
+  };
+
   return (
     <div className="relative w-full h-screen theme-bg-primary overflow-hidden">
       {/* Toast notifications */}
@@ -260,8 +275,7 @@ export default function MapboxMap() {
       {/* Alert system (monitors for critical emergencies) */}
       <AlertSystem emergencies={emergencies} />
 
-      {/* Critical alerts banner */}
-      <AlertBanner emergencies={emergencies} />
+      {/* AlertBanner removed as per user request */}
 
       {/* Satellite Toggle Button */}
       <button
@@ -293,8 +307,11 @@ export default function MapboxMap() {
       {/* AlertsTicker removed as per user request to clean up UI
       <AlertsTicker />
       */}
-      <EnhancedWeatherWidget lat={mapCenter.lat} lng={mapCenter.lng} />
-      <StatsWidget />
+
+      {/* EnhancedWeatherWidget removed from top-right, moved next to SOS button */}
+
+      {/* Emergency Sidebar */}
+      <EmergencySidebar emergencies={emergencies} onEmergencyClick={handleEmergencyClick} />
 
       {/* Albergues Toggle Button removed (moved to filter) */}
 
@@ -302,6 +319,9 @@ export default function MapboxMap() {
       <div ref={mapContainer} className="w-full h-full z-0" />
 
       <EmergencyNumbers />
+
+      {/* Weather Widget - positioned next to SOS button */}
+      <EnhancedWeatherWidget lat={mapCenter.lat} lng={mapCenter.lng} />
 
       {/* Detail panel for mobile */}
       <EmergencyDetailPanel

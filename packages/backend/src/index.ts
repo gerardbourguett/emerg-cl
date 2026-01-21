@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
-import { initializeDatabase, pool } from "./config/database";
+import { initializeDatabase, db } from "./config/database";
 import { emergenciasRouter } from "./routes/emergencias";
 import { weatherRouter } from "./routes/weather";
 import { hospitalsRouter } from "./routes/hospitals";
@@ -10,7 +10,7 @@ import { statsRouter } from "./routes/stats";
 import { scrapeSismosChile } from "./services/scrapers/sismos";
 import { scrapeNASAFIRMS } from "./services/scrapers/firms";
 import { scrapeSenapredTelegram } from "./services/scrapers/senapred-telegram";
-import { saveEmergency, cleanupOldEmergencies } from "./services/database";
+import { saveEmergency, cleanupOldEmergencies, getArchivedEmergencies } from "./services/database";
 import { aggregateDailyStats } from "./services/stats";
 import { SenapredService } from "./services/senapred";
 import { MeteoService } from "./services/meteo";
@@ -28,9 +28,9 @@ app.use("/*", cors({
   allowHeaders: ["Content-Type", "Authorization"],
 }));
 
-// Middleware para pasar pool a contexto
+// Middleware para pasar db a contexto
 app.use(async (c, next) => {
-  (c as any).env = { pool };
+  (c as any).env = { db };
   await next();
 });
 
@@ -46,6 +46,23 @@ app.route("/api/weather", weatherRouter);
 app.route("/api/hospitals", hospitalsRouter);
 app.route("/api/refugios", refugiosRouter);
 app.route("/api/stats", statsRouter);
+
+// Archive endpoint for historical data
+app.get("/api/emergencias/archive", async (c) => {
+  try {
+    const days = parseInt(c.req.query("days") || "7");
+    const data = await getArchivedEmergencies(days);
+    return c.json({
+      source: "archive",
+      days,
+      count: data.length,
+      data
+    });
+  } catch (error) {
+    console.error("Error fetching archive:", error);
+    return c.json({ error: "Failed to fetch archive" }, 500);
+  }
+});
 
 // Backend Scraper Routes
 app.get("/api/senapred/albergues", async (c) => {
@@ -68,6 +85,8 @@ app.get("/api/meteo/condiciones", async (c) => {
   }
 });
 
+// CONAF endpoint temporarily disabled - causing errors
+/*
 app.get("/api/conaf/situacion", async (c) => {
   try {
     const data = await ConafService.getSituacion();
@@ -77,6 +96,7 @@ app.get("/api/conaf/situacion", async (c) => {
     return c.json({ source: "CONAF", data: null, error: "Internal Server Error" }, 500);
   }
 });
+*/
 
 // Iniciar scrapers en background
 async function startScrapers() {
