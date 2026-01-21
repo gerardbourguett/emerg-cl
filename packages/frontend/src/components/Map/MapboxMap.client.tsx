@@ -32,13 +32,7 @@ const TERRITORIES = {
   antartica: { center: [-58.9, -62.2] as [number, number], zoom: 8 },
 };
 
-// Emergency type icons
-const EMERGENCY_ICONS: Record<string, string> = {
-  seismo: "📍",
-  incendio_forestal: "🔥",
-  alerta_meteorologica: "⚠️",
-  tsunami: "🌊",
-};
+
 
 
 
@@ -353,35 +347,29 @@ function createMarkerElement(emergency: Emergency): HTMLDivElement {
   inner.className = "emergency-marker-inner";
 
   const color = SEVERITY_COLORS[emergency.severidad];
-  const icon = EMERGENCY_ICONS[emergency.tipo] || "📍";
 
+  // Minimalist dot marker style
   inner.style.cssText = `
-    width: 100%;
-    height: 100%;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background-color: ${color.bg};
-    border: 2px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid white;
+    box-shadow: 0 0 4px ${color.bg}, 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   `;
 
-  inner.innerHTML = icon;
-
-  // Hover effect applied to INNER element only
+  // Hover effect
   container.addEventListener("mouseenter", () => {
-    inner.style.transform = "scale(1.25)";
-    inner.style.boxShadow = "0 8px 12px rgba(0, 0, 0, 0.5)";
+    inner.style.transform = "scale(1.5)";
+    inner.style.boxShadow = `0 0 12px ${color.bg}, 0 4px 8px rgba(0,0,0,0.3)`;
     inner.style.zIndex = "100";
-    container.style.zIndex = "100"; // Lift container z-index temporarily
+    container.style.zIndex = "100";
   });
 
   container.addEventListener("mouseleave", () => {
     inner.style.transform = "scale(1)";
-    inner.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.3)";
+    inner.style.boxShadow = `0 0 4px ${color.bg}, 0 2px 4px rgba(0,0,0,0.2)`;
     inner.style.zIndex = "1";
     container.style.zIndex = "1";
   });
@@ -441,7 +429,9 @@ function createPopupHTML(emergency: Emergency): string {
         align-items: center;
         gap: 8px;
       ">
-        <span>${EMERGENCY_ICONS[emergency.tipo] || "📍"}</span>
+        gap: 8px;
+      ">
+        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.8);"></span>
         <span>${tipoLabels[emergency.tipo] || emergency.tipo}</span>
       </div>
       
@@ -491,8 +481,8 @@ function createAlbergueMarkerElement(albergues?: any): HTMLDivElement {
   const container = document.createElement("div");
   container.className = "albergue-marker-container";
   container.style.cssText = `
-    width: 32px;
-    height: 32px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -502,30 +492,25 @@ function createAlbergueMarkerElement(albergues?: any): HTMLDivElement {
   const inner = document.createElement("div");
   inner.className = "albergue-marker-inner";
   inner.style.cssText = `
-    width: 100%;
-    height: 100%;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background-color: #10b981;
-    border: 2px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
+    border: 2px solid white;
+    box-shadow: 0 0 4px #10b981, 0 2px 4px rgba(0,0,0,0.2);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   `;
-  inner.innerHTML = "⛺";
 
   container.addEventListener("mouseenter", () => {
-    inner.style.transform = "scale(1.25)";
-    inner.style.boxShadow = "0 8px 12px rgba(0, 0, 0, 0.5)";
+    inner.style.transform = "scale(1.4)";
+    inner.style.boxShadow = "0 0 8px #10b981, 0 4px 6px rgba(0,0,0,0.3)";
     inner.style.zIndex = "100";
     container.style.zIndex = "100";
   });
 
   container.addEventListener("mouseleave", () => {
     inner.style.transform = "scale(1)";
-    inner.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.3)";
+    inner.style.boxShadow = "0 0 4px #10b981, 0 2px 4px rgba(0,0,0,0.2)";
     inner.style.zIndex = "1";
     container.style.zIndex = "1";
   });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ChevronLeft, ChevronRight, AlertTriangle, Clock } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertTriangle, Clock, Flame, Waves, Activity, MapPin } from "lucide-react";
 import type { Emergency } from "../../types/emergency";
 import { SEVERITY_COLORS } from "../../types/emergency";
 
@@ -8,11 +8,15 @@ interface EmergencySidebarProps {
     onEmergencyClick: (emergency: Emergency) => void;
 }
 
-const EMERGENCY_ICONS: Record<string, string> = {
-    seismo: "📍",
-    incendio_forestal: "🔥",
-    alerta_meteorologica: "⚠️",
-    tsunami: "🌊",
+// Icon mapping configuration
+const getEmergencyIcon = (tipo: string) => {
+    switch (tipo) {
+        case "seismo": return Activity;
+        case "incendio_forestal": return Flame;
+        case "alerta_meteorologica": return AlertTriangle;
+        case "tsunami": return Waves;
+        default: return MapPin;
+    }
 };
 
 const TIPO_LABELS: Record<string, string> = {
@@ -40,7 +44,7 @@ export function EmergencySidebar({ emergencies, onEmergencyClick }: EmergencySid
         <>
             {/* Desktop Sidebar */}
             <div
-                className={`hidden md:flex fixed top-0 right-0 h-screen z-[995] transition-all duration-300 ${isCollapsed ? "w-12" : "w-96"
+                className={`hidden md:flex fixed top-0 right-0 h-screen z-[995] transition-all duration-300 ${isCollapsed ? "w-12" : "w-80"
                     }`}
             >
                 {/* Toggle Button */}
@@ -61,25 +65,25 @@ export function EmergencySidebar({ emergencies, onEmergencyClick }: EmergencySid
                     <div className="w-full bg-card/80 backdrop-blur-xl border-l border-border shadow-2xl overflow-hidden flex flex-col">
                         {/* Header */}
                         <div className="p-4 border-b border-border bg-card/50">
-                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                                <AlertTriangle className="w-5 h-5 text-primary" />
-                                Emergencias Activas
+                            <h2 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
+                                <Activity className="w-4 h-4 text-primary" />
+                                Monitor en Vivo
                             </h2>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {emergencies.length} emergencias en total
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {emergencies.length} eventos activos
                             </p>
                         </div>
 
                         {/* Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                        <div className="flex-1 overflow-y-auto p-3 space-y-5 custom-scrollbar">
                             {/* Critical Section */}
                             {criticalEmergencies.length > 0 && (
                                 <div>
-                                    <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                    <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-2 uppercase tracking-wider pl-1">
+                                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
                                         Críticas ({criticalEmergencies.length})
                                     </h3>
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5">
                                         {criticalEmergencies.map((emergency) => (
                                             <EmergencyCard
                                                 key={emergency.id}
@@ -93,11 +97,11 @@ export function EmergencySidebar({ emergencies, onEmergencyClick }: EmergencySid
 
                             {/* Recent Section */}
                             <div>
-                                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                                    <Clock className="w-4 h-4" />
-                                    Más Recientes
+                                <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-2 uppercase tracking-wider pl-1">
+                                    <Clock className="w-3 h-3" />
+                                    Recientes
                                 </h3>
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     {recentEmergencies.map((emergency) => (
                                         <EmergencyCard
                                             key={emergency.id}
@@ -118,14 +122,14 @@ export function EmergencySidebar({ emergencies, onEmergencyClick }: EmergencySid
                 <div className="bg-card/90 backdrop-blur-xl border-t border-border rounded-t-3xl shadow-2xl max-h-[40vh] overflow-hidden">
                     {/* Handle */}
                     <div className="flex justify-center py-2">
-                        <div className="w-12 h-1.5 bg-muted rounded-full" />
+                        <div className="w-10 h-1 bg-muted rounded-full" />
                     </div>
 
                     {/* Content */}
                     <div className="px-4 pb-4 overflow-y-auto max-h-[35vh]">
-                        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-primary" />
-                            Emergencias Críticas
+                        <h3 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+                            <AlertTriangle className="w-3 h-3 text-primary" />
+                            EMERGENCIAS CRÍTICAS
                         </h3>
                         <div className="space-y-2">
                             {criticalEmergencies.slice(0, 3).map((emergency) => (
@@ -152,7 +156,7 @@ interface EmergencyCardProps {
 
 function EmergencyCard({ emergency, onClick, compact = false }: EmergencyCardProps) {
     const color = SEVERITY_COLORS[emergency.severidad];
-    const icon = EMERGENCY_ICONS[emergency.tipo] || "📍";
+    const Icon = getEmergencyIcon(emergency.tipo);
     const tipoLabel = TIPO_LABELS[emergency.tipo] || emergency.tipo;
 
     const timeAgo = getTimeAgo(new Date(emergency.fecha_actualizacion));
@@ -160,15 +164,15 @@ function EmergencyCard({ emergency, onClick, compact = false }: EmergencyCardPro
     return (
         <button
             onClick={onClick}
-            className="w-full text-left bg-muted/30 hover:bg-muted/50 border border-border rounded-xl p-3 transition-all hover:scale-[1.02] hover:shadow-lg group"
+            className="w-full text-left bg-muted/20 hover:bg-muted/40 border border-transparent hover:border-border rounded-lg p-2.5 transition-all hover:translate-x-1 group"
         >
             <div className="flex items-start gap-3">
-                {/* Icon */}
+                {/* Minimalist Icon */}
                 <div
-                    className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-                    style={{ backgroundColor: color.bg + "20" }}
+                    className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: color.bg + "15", color: color.bg }}
                 >
-                    {icon}
+                    <Icon className="w-4 h-4" strokeWidth={2.5} />
                 </div>
 
                 {/* Content */}

@@ -69,13 +69,13 @@ export function EnhancedWeatherWidget({ lat, lng }: { lat: number; lng: number }
 
   if (loading || !weather) {
     return (
-      <div className="fixed bottom-6 left-24 md:left-32 z-[998] pointer-events-none">
-        <Card className="pointer-events-auto theme-widget p-3">
+      <div className="fixed top-4 left-20 z-[998] pointer-events-none">
+        <div className="pointer-events-auto bg-black/20 backdrop-blur-md rounded-full px-4 py-2 flex items-center gap-2">
           <div className="flex items-center gap-2">
             <Cloud className="h-5 w-5 animate-pulse theme-text-muted" />
             <span className="text-xs theme-text-muted">Cargando...</span>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -133,153 +133,168 @@ export function EnhancedWeatherWidget({ lat, lng }: { lat: number; lng: number }
   };
 
   return (
-    <div className="fixed bottom-6 left-24 md:left-32 z-[998] pointer-events-none">
-      <Card
+
+    <div className="fixed top-4 left-20 z-[998] pointer-events-none">
+      {/* Compact Pill Widget */}
+      <div
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="pointer-events-auto theme-widget cursor-pointer hover:shadow-xl transition-all"
+        className="pointer-events-auto bg-black/40 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-black/60 transition-all shadow-xl group"
       >
-        {/* Collapsed View */}
-        {isCollapsed && (
-          <div className="p-3 flex items-center gap-3">
-            <div className="h-8 w-8">
-              {getWeatherIcon(weather.icon)}
-            </div>
-            <div>
-              <p className="text-lg font-bold theme-text-primary leading-none">
-                {Math.round(weather.temp)}°C
-              </p>
-              <p className="text-xs theme-text-muted capitalize">
-                {weather.description}
-              </p>
-            </div>
-          </div>
-        )}
+        <div className="h-6 w-6 text-white group-hover:scale-110 transition-transform">
+          {getWeatherIcon(weather.icon)}
+        </div>
+        <div className="flex flex-col leading-none">
+          <span className="text-sm font-bold text-white">{Math.round(weather.temp)}°</span>
+          <span className="text-[10px] text-white/70 capitalize">{weather.name}</span>
+        </div>
+      </div>
 
-        {/* Expanded View */}
-        {!isCollapsed && (
-          <div className="p-4 min-w-[280px]">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10">
-                  {getWeatherIcon(weather.icon)}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold theme-text-secondary">
-                    {weather.name || "Ubicación en Mapa"}
-                  </p>
-                  <p className="text-2xl font-bold theme-text-primary leading-none">
-                    {Math.round(weather.temp)}°C
-                  </p>
-                  <p className="text-xs theme-text-muted capitalize">
-                    {weather.description}
-                  </p>
-                </div>
+      {/* Expanded Details Popup (only if not collapsed) */}
+      {!isCollapsed && (
+        <Card className="pointer-events-auto theme-widget mt-2 w-64 p-4 animate-in fade-in zoom-in-95 origin-top-left absolute top-full left-0">
+          {/* Collapsed View */}
+          {isCollapsed && (
+            <div className="p-3 flex items-center gap-3">
+              <div className="h-8 w-8">
+                {getWeatherIcon(weather.icon)}
+              </div>
+              <div>
+                <p className="text-lg font-bold theme-text-primary leading-none">
+                  {Math.round(weather.temp)}°C
+                </p>
+                <p className="text-xs theme-text-muted capitalize">
+                  {weather.description}
+                </p>
               </div>
             </div>
+          )}
 
-            {/* Weather Details Grid */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div className="flex items-center gap-2">
-                <Gauge className="h-4 w-4 theme-text-muted" />
-                <div>
-                  <p className="text-xs theme-text-muted">Sensación</p>
-                  <p className="text-sm font-semibold theme-text-primary">
-                    {Math.round(weather.feels_like)}°C
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Droplets className="h-4 w-4 theme-text-muted" />
-                <div>
-                  <p className="text-xs theme-text-muted">Humedad</p>
-                  <p className="text-sm font-semibold theme-text-primary">
-                    {weather.humidity}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Wind className="h-4 w-4 theme-text-muted" />
-                <div>
-                  <p className="text-xs theme-text-muted">Viento</p>
-                  <p className="text-sm font-semibold theme-text-primary">
-                    {Math.round(weather.wind_speed * 3.6)} km/h
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 theme-text-muted" />
-                <div>
-                  <p className="text-xs theme-text-muted">Visibilidad</p>
-                  <p className="text-sm font-semibold theme-text-primary">
-                    {(weather.visibility / 1000).toFixed(1)} km
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* UV Index */}
-            {uv && uvLevel && (
-              <div className="border-t theme-border pt-3 mb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sun className="h-4 w-4 theme-text-muted" />
-                    <span className="text-xs theme-text-muted">Índice UV</span>
+          {/* Expanded View */}
+          {!isCollapsed && (
+            <div className="p-4 min-w-[280px]">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10">
+                    {getWeatherIcon(weather.icon)}
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold theme-text-primary">
-                      {uv.value.toFixed(1)}
+                  <div>
+                    <p className="text-sm font-semibold theme-text-secondary">
+                      {weather.name || "Ubicación en Mapa"}
                     </p>
-                    <p className={`text-xs font-semibold ${uvLevel.color}`}>
-                      {uvLevel.label}
+                    <p className="text-2xl font-bold theme-text-primary leading-none">
+                      {Math.round(weather.temp)}°C
+                    </p>
+                    <p className="text-xs theme-text-muted capitalize">
+                      {weather.description}
                     </p>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Air Quality */}
-            {airQuality && aqiLevel && (
-              <div className="border-t theme-border pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Wind className="h-4 w-4 theme-text-muted" />
-                    <span className="text-xs theme-text-muted">
-                      Calidad del Aire
-                    </span>
+              {/* Weather Details Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <Gauge className="h-4 w-4 theme-text-muted" />
+                  <div>
+                    <p className="text-xs theme-text-muted">Sensación</p>
+                    <p className="text-sm font-semibold theme-text-primary">
+                      {Math.round(weather.feels_like)}°C
+                    </p>
                   </div>
-                  <p className={`text-xs font-semibold ${aqiLevel.color}`}>
-                    {aqiLevel.label}
-                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <Droplets className="h-4 w-4 theme-text-muted" />
                   <div>
-                    <span className="theme-text-muted">PM2.5:</span>{" "}
-                    <span className="font-semibold theme-text-primary">
-                      {airQuality.pm2_5.toFixed(1)}
-                    </span>
+                    <p className="text-xs theme-text-muted">Humedad</p>
+                    <p className="text-sm font-semibold theme-text-primary">
+                      {weather.humidity}%
+                    </p>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Wind className="h-4 w-4 theme-text-muted" />
                   <div>
-                    <span className="theme-text-muted">PM10:</span>{" "}
-                    <span className="font-semibold theme-text-primary">
-                      {airQuality.pm10.toFixed(1)}
-                    </span>
+                    <p className="text-xs theme-text-muted">Viento</p>
+                    <p className="text-sm font-semibold theme-text-primary">
+                      {Math.round(weather.wind_speed * 3.6)} km/h
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 theme-text-muted" />
+                  <div>
+                    <p className="text-xs theme-text-muted">Visibilidad</p>
+                    <p className="text-sm font-semibold theme-text-primary">
+                      {(weather.visibility / 1000).toFixed(1)} km
+                    </p>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Timestamp */}
-            <p className="text-[10px] theme-text-muted mt-3 text-center opacity-75">
-              Actualizado: {lastUpdated}
-            </p>
-          </div>
-        )}
-      </Card>
+              {/* UV Index */}
+              {uv && uvLevel && (
+                <div className="border-t theme-border pt-3 mb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sun className="h-4 w-4 theme-text-muted" />
+                      <span className="text-xs theme-text-muted">Índice UV</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold theme-text-primary">
+                        {uv.value.toFixed(1)}
+                      </p>
+                      <p className={`text-xs font-semibold ${uvLevel.color}`}>
+                        {uvLevel.label}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Air Quality */}
+              {airQuality && aqiLevel && (
+                <div className="border-t theme-border pt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Wind className="h-4 w-4 theme-text-muted" />
+                      <span className="text-xs theme-text-muted">
+                        Calidad del Aire
+                      </span>
+                    </div>
+                    <p className={`text-xs font-semibold ${aqiLevel.color}`}>
+                      {aqiLevel.label}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="theme-text-muted">PM2.5:</span>{" "}
+                      <span className="font-semibold theme-text-primary">
+                        {airQuality.pm2_5.toFixed(1)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="theme-text-muted">PM10:</span>{" "}
+                      <span className="font-semibold theme-text-primary">
+                        {airQuality.pm10.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Timestamp */}
+              <p className="text-[10px] theme-text-muted mt-3 text-center opacity-75">
+                Actualizado: {lastUpdated}
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
